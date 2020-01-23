@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>a0a3e602-8345-4a4e-a285-fc618cd22709</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>EmoRec_2.0.py</StartupFile>
+    <StartupFile>MainGUI.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -21,7 +21,13 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="EmoRec_2.0.py" />
+    <Compile Include="HelperFunctions.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MainGUI.py" />
+    <Compile Include="InputController.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
