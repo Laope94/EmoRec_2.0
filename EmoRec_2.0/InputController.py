@@ -18,7 +18,7 @@ class InputController(object):
                            ", " + hostapiQueryResult[deviceQueryResult[i]["hostapi"]]["name"] + 
                            ", (in: " + str(deviceQueryResult[i]["max_input_channels"]) +
                            ", out: " + str(deviceQueryResult[i]["max_output_channels"]) + ")" +
-                           ", " + str(deviceQueryResult[i]["default_samplerate"]) + "Khz"] = i
+                           ", " + str(deviceQueryResult[i]["default_samplerate"]) + " Khz"] = i
         return deviceList
 
 

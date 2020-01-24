@@ -4,13 +4,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>a0a3e602-8345-4a4e-a285-fc618cd22709</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>MainGUI.py</StartupFile>
+    <StartupFile>Main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>EmoRec_2.0</Name>
     <RootNamespace>EmoRec_2.0</RootNamespace>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -24,8 +25,16 @@
     <Compile Include="HelperFunctions.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MainGUI.py" />
+    <Compile Include="Main.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="InputController.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SessionControls.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SessionSettings.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

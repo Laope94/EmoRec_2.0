@@ -8,6 +8,10 @@ class HelperFunctions(object):
     def unlockWidget(widget):
         widget.config(state='normal')
 
+    def getValueByKey(dictionary, dictionary_key):
+        return dictionary[dictionary_key]
+
+
 #-----------------------------------------------------
 #---LOGIC HELPERS-------------------------------------
 #-----------------------------------------------------
