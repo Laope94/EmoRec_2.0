@@ -1,20 +1,13 @@
 class HelperFunctions(object):
-#-----------------------------------------------------
-#---GUI HELPERS---------------------------------------
-#-----------------------------------------------------
+
     def lockWidget(widget):
-        widget.config(stage='disabled')
+        widget.config(state='disabled')
 
     def unlockWidget(widget):
         widget.config(state='normal')
 
+    def readonlyWidget(widget):
+        widget.config(state='readonly')
+
     def getValueByKey(dictionary, dictionary_key):
         return dictionary[dictionary_key]
-
-
-#-----------------------------------------------------
-#---LOGIC HELPERS-------------------------------------
-#-----------------------------------------------------
-
-
-

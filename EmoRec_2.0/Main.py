@@ -7,17 +7,15 @@ class Main(object):
 
     def main(self):
         self.masterWindow = self.tk.Tk()
+        self.masterWindow.resizable(False,False)
         self.createSessionSettings(self.masterWindow)
         self.masterWindow.mainloop()
 
     def createSessionSettings(self,master):
         self.SessionSettings(self,master,self.InputController().getDeviceList())
 
-    def createSessionControls(self,master):
-        self.SessionControls(self,master)
+    def createSessionControls(self,master,filepath,packedVariables):
+        self.SessionControls(self,master,filepath,packedVariables, self.InputController())
 
 if __name__ == '__main__':
     Main().main()
-
-
-
