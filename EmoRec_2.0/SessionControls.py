@@ -30,7 +30,7 @@ class SessionControls(object):
         self.buttonStartSession = self.tk.Button(self.frame, text='Štart', command= lambda : self.inputController.startStream(self.deviceID,self.sampleRate,self.dataGrabber))
         self.buttonStartSession.config(width=20,height=2)
 
-        self.buttonStopSession = self.tk.Button(self.frame, text='Stop')
+        self.buttonStopSession = self.tk.Button(self.frame, text='Stop', command = self.stopButtonAction)
         self.buttonStopSession.config(width=20,height=2)
 
         self.buttonStartPlayback = self.tk.Button(self.frame, text='Prehrať')
@@ -61,3 +61,6 @@ class SessionControls(object):
     def dataGrabber(self,data):
         self.numpyData = self.np.array(data)
         print(self.numpyData.shape)
+
+    def stopButtonAction(self):
+        self.inputController.streamStop()

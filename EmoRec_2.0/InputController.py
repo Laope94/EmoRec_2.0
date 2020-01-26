@@ -11,13 +11,6 @@ class InputController(object):
     import sounddevice as sd # https://python-sounddevice.readthedocs.io/en/0.3.14/
     import queue
     from threading import Thread
-
-    # mechanizmus bufferovania - queue je FIFO štruktúra, ktorú tento program používa na krátkodobé uchovávanie malého množstva údajov zo streamu
-    # dataBuffer je pole, do ktorého sa pridá blok údajov z queue ak je queue plná
-    # mechanism of buffering - queue is FIFO structure, in this program it's used for short-therm saving of small amount of data from stream
-    # dataBuffer is array, if queue is full, block of data is appended to array 
-    q = queue.Queue(maxsize=2048)
-    dataBuffer = []
    
     # funkcia vráti slovník obsahujúci údaje o vstupných zariadeniach a ich ID (ID je nutné pre otvorenie prúdu údajov)
     # function returns dictionary containing information about input devices and their ID's (ID is required for opening data stream)
@@ -43,26 +36,62 @@ class InputController(object):
     def startStream(self, deviceID, samplerate, dataGrabber):
         self.streamWorkerThread = self.Thread(target = self.__startStreamWorker, args=(deviceID,samplerate,dataGrabber))
         self.streamWorkerThread.start()
-        #return self.streamWorkerThread
+        self.runningWorker = True
     
     # funkcia, ktorá otvára stream, nedoporučuje sa volať priamo, pretože blokuje mainloop, volá sa cez startStream()
-    # function, opening data stream, not advised to call directly since it's blocking mainloop, call startStream() instead
+    # function opening data stream, not advised to call directly since it's blocking mainloop, call startStream() instead
     def __startStreamWorker(self, deviceID, samplerate, dataGrabber):
-        # otvára prúd údajov zo zariadenia s daným ID a so zadanou vzorkovacou frekvenciou
-        # zatial nie je možné používať viacero vstupných kanálov naraz (channels = 1)
-        # opens data stream from device with given ID and with given sample rate
-        # it's not possible to use multiple input channels at once (channels = 1)
-        with self.sd.InputStream(samplerate=samplerate,channels=1,device=deviceID, callback=self.dataToQueue): 
-            while True:
-                self.dataBuffer.append(self.q.get()) # pridá dáta z queue do buffera | adds data from queue to buffer
-                if(len(self.dataBuffer)==100): # ak sa buffer naplní do určitej veľkosti | if buffers fills with certain amount of data
-                    self.sendDataThread = self.Thread(target = dataGrabber, args=(self.dataBuffer,)) # posiela dáta do dataGrabber funkcie | sends data to dataGrabber function
-                    self.sendDataThread.start()
-                    self.dataBuffer=[] # vyprázdni buffer | empties buffer
+        self.streamWorker = self.StreamWorker(deviceID,samplerate,dataGrabber)
+        self.streamWorker.run()
 
-    # callback funkcia, ktorá priebežne ukladá dáta z prúdu do queue
-    # callback function constantly saving data from stream to queue
-    def dataToQueue(self,indata,frames,time,status):
-        if(status):
-            print(status)
-        self.q.put(indata.copy())
+    # funkcia, ktorá zastavuje workera a zároveň zastavuje vlákno na ktorom worker beží
+    # function that that stops worker and thread that runs worker
+    def streamStop(self):
+        self.streamWorker.terminate()
+        self.streamWorkerThread.join()
+
+    class StreamWorker(object):
+        # trieda StreamWorker je vnorená trieda InputController a stará sa o vytváranie a zatváranie prúdu údajov
+        # class StreamWorker is nested class of InputController and it handles creating and closing data stream 
+        import sounddevice as sd # https://python-sounddevice.readthedocs.io/en/0.3.14/
+        import queue
+        from threading import Thread
+
+        def __init__(self, deviceID, samplerate, dataGrabber):
+            self.isRunning = True
+            self.deviceID = deviceID
+            self.samplerate = samplerate
+            self.dataGrabber = dataGrabber
+
+            # mechanizmus bufferovania - queue je FIFO štruktúra, ktorú tento program používa na krátkodobé uchovávanie malého množstva údajov zo streamu
+            # dataBuffer je pole, do ktorého sa pridá blok údajov z queue ak je queue plná
+            # mechanism of buffering - queue is FIFO structure, in this program it's used for short-therm saving of small amount of data from stream
+            # dataBuffer is array, if queue is full, block of data is appended to array 
+            self.q = self.queue.Queue(maxsize=2048)
+            self.dataBuffer = []
+
+        def terminate(self):
+            self.isRunning = False
+
+        def run(self):
+            # otvára prúd údajov zo zariadenia s daným ID a so zadanou vzorkovacou frekvenciou
+            # zatial nie je možné používať viacero vstupných kanálov naraz (channels = 1)
+            # opens data stream from device with given ID and with given sample rate
+            # it's not possible to use multiple input channels at once (channels = 1)
+            with self.sd.InputStream(samplerate=self.samplerate,channels=1,device=self.deviceID, callback=self.__dataToQueue): 
+                while self.isRunning:
+                    self.dataBuffer.append(self.q.get()) # pridá dáta z queue do buffera | adds data from queue to buffer
+                    if(len(self.dataBuffer)==100): # ak sa buffer naplní do určitej veľkosti | if buffers fills with certain amount of data
+                        self.sendDataThread = self.Thread(target = self.dataGrabber, args=(self.dataBuffer,)) # posiela dáta do dataGrabber funkcie | sends data to dataGrabber function
+                        self.sendDataThread.start()
+                        self.dataBuffer=[] # vyprázdni buffer | empties buffer
+
+        # callback funkcia, ktorá priebežne ukladá dáta z prúdu do queue
+        # callback function constantly saving data from stream to queue
+        def __dataToQueue(self,indata,frames,time,status):
+            if(status):
+                print(status)
+            self.q.put(indata.copy())
+
+
+
