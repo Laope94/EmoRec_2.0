@@ -1,3 +1,9 @@
+# Univerzita Konštantína Filozofa v Nitre | Constantine the Philosopher University in Nitra
+# Fakulta Prírodných Vied | Faculty of Natural Sciences
+# Katedra informatiky | Department of informatics
+# Diplomová práca | Diploma thesis
+# Bc. Timotej Sulka
+
 class SessionControls(object):
     import tkinter as tk
     from HelperFunctions import HelperFunctions as help

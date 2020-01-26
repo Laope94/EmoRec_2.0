@@ -1,3 +1,9 @@
+# Univerzita Konštantína Filozofa v Nitre | Constantine the Philosopher University in Nitra
+# Fakulta Prírodných Vied | Faculty of Natural Sciences
+# Katedra informatiky | Department of informatics
+# Diplomová práca | Diploma thesis
+# Bc. Timotej Sulka
+
 class SessionSettings(object):
     import tkinter as tk
     from tkinter import filedialog
@@ -58,6 +64,8 @@ class SessionSettings(object):
         self.entryFilePath.grid(row=6,column=1,padx=5,pady=5,sticky='ew')
         self.buttonConfirmFileSelection.grid(row=7,column=0,columnspan=2,padx=10,pady=5)
 
+    # zbalí nastavenia session a cez destroyItself funkciu ich odošle ako parameter do funkcie rodiča
+    # packs session settings and sends them as parameter to parent function through destroyItself function
     def sendPackedSettings(self):
         self.packedVariables = dict()
         self.packedVariables['deviceID'] = self.help.getValueByKey(self.deviceList,self.selectedDevice.get())
@@ -65,16 +73,21 @@ class SessionSettings(object):
         self.packedVariables['windowLength'] = int(self.selectedWindowLength.get())
         self.destroyItself(None, self.packedVariables)
 
+    # cez destroyItself funkciu odošle cestu k vybranému súboru do funkcie rodiča
+    # send path to selected file as parameter to parent function through destroyItself function
     def sendFilePath(self):
         self.destroyItself(self.entryFilePath.get(),None)
   
+    # funkcia, ktorá vymaže SessionSettings frame z hlavného okna a zavolá funkciu rodiča, ktorá vytvorí frame s ovládacím panelom session
+    # function that deletes SessionSettings frame from main window and calls parent function, which creates frame with session control panel
     def destroyItself(self, filepath, packedVariables):
         self.frame.grid_forget()
         self.frame.destroy()
         self.parent.createSessionControls(self.master, filepath, packedVariables)
 
+    # funkcia, ktorá otvára okno explorera pre vyhladávanie .wav súborov | function opening explorer window searching for .wav files
     def openFileDialog(self):
-        filename = self.filedialog.askopenfilename(initialdir='/',filetypes=[('Wav file', '*.wav')], title='Výber súboru')
+        filename = self.filedialog.askopenfilename(initialdir='/',filetypes=[('wav file', '*.wav')], title='Výber súboru')
         self.help.unlockWidget(self.entryFilePath)
         self.entryFilePath.delete(0,'end')
         self.entryFilePath.insert(0,filename)
