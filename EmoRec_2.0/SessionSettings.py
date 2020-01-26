@@ -4,50 +4,50 @@
 # Diplomová práca | Diploma thesis
 # Bc. Timotej Sulka
 
-class SessionSettings(object):
-    import tkinter as tk
-    from tkinter import filedialog
-    from tkinter import font
-    from HelperFunctions import HelperFunctions as help
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import font
+from HelperFunctions import HelperFunctions as help
 
+class SessionSettings(object):
     def __init__(self, parent, master, deviceList):
         self.parent = parent
         self.master = master
         self.master.title('EmoRec 2.0 - Nová session')
         self.deviceList = deviceList
-        self.frame = self.tk.Frame(self.master)
+        self.frame = tk.Frame(self.master)
         self.frame.grid(column=0,row=0, sticky='nwes', padx=10,pady=10)
 
         #widgets initialization
-        self.labelNewSession = self.tk.Label(self.frame,text='Nová session', font=('',15,'bold'))
+        self.labelNewSession = tk.Label(self.frame,text='Nová session', font=('',15,'bold'))
 
-        self.buttonConfirmSettings = self.tk.Button(self.frame, text='Začať session', state='disabled', command=self.sendPackedSettings)
+        self.buttonConfirmSettings = tk.Button(self.frame, text='Začať session', state='disabled', command=self.sendPackedSettings)
         self.buttonConfirmSettings.config(width=20,height=2)
 
-        self.labelDevice = self.tk.Label(self.frame,text='Výber vstupného zariadenia :')
-        self.selectedDevice = self.tk.StringVar(self.master)
+        self.labelDevice = tk.Label(self.frame,text='Výber vstupného zariadenia :')
+        self.selectedDevice = tk.StringVar(self.master)
         self.selectedDevice.set('-------------------- žiadne --------------------')
-        self.dropdownDeviceSelection = self.tk.OptionMenu(self.frame,self.selectedDevice,*self.deviceList.keys(), command=lambda widget : self.help.unlockWidget(self.buttonConfirmSettings))
+        self.dropdownDeviceSelection = tk.OptionMenu(self.frame,self.selectedDevice,*self.deviceList.keys(), command=lambda widget : help.unlockWidget(self.buttonConfirmSettings))
         self.dropdownDeviceSelection.config(relief='sunken', borderwidth=0.5, background='white', activebackground='white', width=100)
 
-        self.labelSampleRate = self.tk.Label(self.frame,text='Výber vzorkovacej frekvencie (Hz) :')
-        self.selectedSampleRate = self.tk.StringVar(self.master)
+        self.labelSampleRate = tk.Label(self.frame,text='Výber vzorkovacej frekvencie (Hz) :')
+        self.selectedSampleRate = tk.StringVar(self.master)
         self.selectedSampleRate.set('48000')
-        self.dropdownSampleRate = self.tk.OptionMenu(self.frame,self.selectedSampleRate,*('44100','48000','64000','88200','96000'))
+        self.dropdownSampleRate = tk.OptionMenu(self.frame,self.selectedSampleRate,*('44100','48000','64000','88200','96000'))
         self.dropdownSampleRate.config(relief='sunken', borderwidth=0.5, background='white', activebackground='white', width=100)
 
-        self.labelWindowLength = self.tk.Label(self.frame,text='Výber dĺžky vyhodnocovacieho okna (s) :')
-        self.selectedWindowLength = self.tk.StringVar(self.master)
+        self.labelWindowLength = tk.Label(self.frame,text='Výber dĺžky vyhodnocovacieho okna (s) :')
+        self.selectedWindowLength = tk.StringVar(self.master)
         self.selectedWindowLength.set('2')
-        self.dropdownWindowLength = self.tk.OptionMenu(self.frame,self.selectedWindowLength,*('2','3','4','5','6','7','8','9','10'))
+        self.dropdownWindowLength = tk.OptionMenu(self.frame,self.selectedWindowLength,*('2','3','4','5','6','7','8','9','10'))
         self.dropdownWindowLength.config(relief='sunken', borderwidth=0.5, background='white', activebackground='white', width=100)
 
-        self.labelLoadFile = self.tk.Label(self.frame,text='Načítať zo súboru', font=('',15,'bold'))
-        self.entryFilePath = self.tk.Entry(self.frame, state='readonly')
+        self.labelLoadFile = tk.Label(self.frame,text='Načítať zo súboru', font=('',15,'bold'))
+        self.entryFilePath = tk.Entry(self.frame, state='readonly')
         self.entryFilePath.config(readonlybackground='white')
-        self.buttonFileDialog = self.tk.Button(self.frame,text="Nájsť súbor", command=self.openFileDialog)
+        self.buttonFileDialog = tk.Button(self.frame,text="Nájsť súbor", command=self.openFileDialog)
 
-        self.buttonConfirmFileSelection = self.tk.Button(self.frame,text='Analyzovať súbor', state='disabled', command=self.sendFilePath)
+        self.buttonConfirmFileSelection = tk.Button(self.frame,text='Analyzovať súbor', state='disabled', command=self.sendFilePath)
         self.buttonConfirmFileSelection.config(width=20,height=2)
 
         #grid placement
@@ -67,11 +67,11 @@ class SessionSettings(object):
     # zbalí nastavenia session a cez destroyItself funkciu ich odošle ako parameter do funkcie rodiča
     # packs session settings and sends them as parameter to parent function through destroyItself function
     def sendPackedSettings(self):
-        self.packedVariables = dict()
-        self.packedVariables['deviceID'] = self.help.getValueByKey(self.deviceList,self.selectedDevice.get())
-        self.packedVariables['sampleRate'] = int(self.selectedSampleRate.get())
-        self.packedVariables['windowLength'] = int(self.selectedWindowLength.get())
-        self.destroyItself(None, self.packedVariables)
+        packedVariables = dict()
+        packedVariables['deviceID'] = help.getValueByKey(self.deviceList,self.selectedDevice.get())
+        packedVariables['sampleRate'] = int(self.selectedSampleRate.get())
+        packedVariables['windowLength'] = int(self.selectedWindowLength.get())
+        self.destroyItself(None, packedVariables)
 
     # cez destroyItself funkciu odošle cestu k vybranému súboru do funkcie rodiča
     # send path to selected file as parameter to parent function through destroyItself function
@@ -87,12 +87,12 @@ class SessionSettings(object):
 
     # funkcia, ktorá otvára okno explorera pre vyhladávanie .wav súborov | function opening explorer window searching for .wav files
     def openFileDialog(self):
-        filename = self.filedialog.askopenfilename(initialdir='/',filetypes=[('wav file', '*.wav')], title='Výber súboru')
-        self.help.unlockWidget(self.entryFilePath)
+        filename = filedialog.askopenfilename(initialdir='/',filetypes=[('wav file', '*.wav')], title='Výber súboru')
+        help.unlockWidget(self.entryFilePath)
         self.entryFilePath.delete(0,'end')
         self.entryFilePath.insert(0,filename)
-        self.help.readonlyWidget(self.entryFilePath)
+        help.readonlyWidget(self.entryFilePath)
         if(len(self.entryFilePath.get())>0):
-            self.help.unlockWidget(self.buttonConfirmFileSelection)
+            help.unlockWidget(self.buttonConfirmFileSelection)
         else:
-            self.help.lockWidget(self.buttonConfirmFileSelection)
+            help.lockWidget(self.buttonConfirmFileSelection)
