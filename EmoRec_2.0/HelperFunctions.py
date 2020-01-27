@@ -9,17 +9,20 @@ class HelperFunctions(object):
     # this class contains helper functions commonly used by other classes
 
     # zamknúť prvok GUI | lock GUI element
-    def lockWidget(widget):
-        widget.config(state='disabled')
+    def lockWidget(*widget):
+        for w in widget:
+            w.config(state='disabled')
 
     # odomknúť prvok GUI | unlock GUI element
-    def unlockWidget(widget):
-        widget.config(state='normal')
+    def unlockWidget(*widget):
+        for w in widget:
+            w.config(state='normal')
 
     # nastaviť prvok GUI iba na čítanie | set GUI element as readonly
     # prvok znovu umožní zápis po použití funkcie unlockWidget() | element allows writing again after calling unlockWidget() function
-    def readonlyWidget(widget):
-        widget.config(state='readonly')
+    def readonlyWidget(*widget):
+        for w in widget:
+            w.config(state='readonly')
 
     # zo slovníka vráti hodnotu daného klúča | returns value of given key from dictionary
     def getValueByKey(dictionary, dictionary_key):

@@ -6,8 +6,8 @@
 
 import tkinter as tk # https://docs.python.org/2/library/tkinter.html knižnica pre GUI | library for GUI
 from InputController import InputController
-from SessionSettings import SessionSettings
-from SessionControls import SessionControls
+from SessionSettingsGUI import SessionSettings
+from SessionControlPanelGUI import SessionControlPanel
 
 class Main(object):
     # hlavná trieda, slúži ako vstupný bod programu, spravuje vytváranie GUI na hlavnom vlákne
@@ -27,7 +27,7 @@ class Main(object):
     # vytvára GUI s kontrolným panelom session - ovládanie vstupu, vyhodnocovanie emócií atď... 
     # creates GUI with session control panel - input controls, emotion categorization etc...
     def createSessionControls(self,master,filepath,packedVariables):
-        SessionControls(self,master,filepath,packedVariables, InputController())
+        SessionControlPanel(self,master,filepath,packedVariables, InputController())
 
 if __name__ == '__main__':
     Main().main()

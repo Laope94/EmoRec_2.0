@@ -64,7 +64,7 @@ class InputController(object):
             # dataBuffer je pole, do ktorého sa pridá blok údajov z queue ak je queue plná
             # mechanism of buffering - queue is FIFO structure, in this program it's used for short-therm saving of small amount of data from stream
             # dataBuffer is array, if queue is full, block of data is appended to array 
-            self.q = queue.Queue(maxsize=2048)
+            self.q = queue.Queue()
             self.dataBuffer = []
 
         def terminate(self):
