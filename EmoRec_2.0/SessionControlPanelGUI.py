@@ -32,7 +32,8 @@ class SessionControlPanel(object):
 
         #widgets initialization
         self.fig = Figure(figsize=(10,2))
-        self.fig.set_facecolor('none')
+        self.fig.set_facecolor('#F0F0F0')
+        self.fig.subplots_adjust(left=0.05, bottom=0.15, right=0.99, top=0.95, wspace=0, hspace=0)
         self.graph = self.fig.add_subplot(111)
         self.graph.plot(np.zeros(4000))
         self.graph.set_ylim(-1,1)
@@ -85,13 +86,12 @@ class SessionControlPanel(object):
         self.parent.createSessionSettings(self.master)
 
     def dataGrabber(self,data):
-        self.numpyData = np.array(data)
-        x = self.numpyData.shape[1]
-        self.numpyData = self.numpyData.reshape(100*x,1)
-        self.master.after(1, self.redrawGraph)
+        self.numpyData = data
+        self.master.after(0, self.redrawGraph)
 
     def redrawGraph(self):
         self.graph.clear()
+        self.graph.set_xlim(0,480000)
         self.graph.set_ylim(-1,1)
         self.graph.plot(self.numpyData)
         self.plotCanvas.draw()

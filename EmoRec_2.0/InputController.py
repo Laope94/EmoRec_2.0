@@ -6,6 +6,7 @@
 
 import sounddevice as sd # https://python-sounddevice.readthedocs.io/en/0.3.14/
 import queue
+import numpy as np
 from threading import Thread
 
 # táto trieda obsahuje funkcie, ktoré ovládajú vstupné zariadenia a prúd údajov z nich
@@ -64,8 +65,8 @@ class InputController(object):
             # dataBuffer je pole, do ktorého sa pridá blok údajov z queue ak je queue plná
             # mechanism of buffering - queue is FIFO structure, in this program it's used for short-therm saving of small amount of data from stream
             # dataBuffer is array, if queue is full, block of data is appended to array 
-            self.q = queue.Queue()
-            self.dataBuffer = []
+            #self.q = queue.Queue()
+            self.dataBuffer = self.DataBuffer(self.samplerate,2)
 
         def terminate(self):
             self.isRunning = False
@@ -75,17 +76,58 @@ class InputController(object):
             # zatial nie je možné používať viacero vstupných kanálov naraz (channels = 1)
             # opens data stream from device with given ID and with given sample rate
             # it's not possible to use multiple input channels at once (channels = 1)
-            with sd.InputStream(samplerate=self.samplerate,channels=1,device=self.deviceID, callback=self.__dataToQueue): 
+            with sd.InputStream(samplerate=self.samplerate,channels=1,device=self.deviceID, blocksize=1024, callback=self.__dataToQueue): 
                 while self.isRunning:
-                    self.dataBuffer.append(self.q.get()) # pridá dáta z queue do buffera | adds data from queue to buffer
-                    if(len(self.dataBuffer)==100): # ak sa buffer naplní do určitej veľkosti | if buffers fills with certain amount of data
-                        self.sendDataThread = Thread(target = self.dataGrabber, args=(self.dataBuffer,)) # posiela dáta do dataGrabber funkcie | sends data to dataGrabber function
+                    if(self.dataBuffer.pushToFrame()): # ak sa buffer naplní do určitej veľkosti | if buffers fills with certain amount of data
+                        if(self.dataBuffer.isDataBufferFull()):
+                            self.dataBuffer.removeFirstFrame()
+                        self.sendDataThread = Thread(target = self.dataGrabber, args=(self.dataBuffer.getAllFrames(),)) # posiela dáta do dataGrabber funkcie | sends data to dataGrabber function
                         self.sendDataThread.start()
-                        self.dataBuffer=[] # vyprázdni buffer | empties buffer
+                        
 
         # callback funkcia, ktorá priebežne ukladá dáta z prúdu do queue
         # callback function constantly saving data from stream to queue
         def __dataToQueue(self,indata,frames,time,status):
             if(status):
                 print(status)
-            self.q.put(indata.copy())
+            self.dataBuffer.pushToQueue(indata.copy())
+
+        class DataBuffer(object):
+            def __init__(self, sampleRate, windowLength):
+                self.frameLength = sampleRate*windowLength
+                self.q = queue.Queue()
+                self.frame = []
+                self.dataBuffer = []
+                
+            def pushToQueue(self,data):
+                self.q.put(data)
+
+            def pushToFrame(self):
+                self.frame.extend(self.q.get())
+                if(len(self.frame)>self.frameLength):
+                    self.__pushToBuffer()
+                    del self.frame[0:self.frameLength]
+                    return True
+                else: 
+                    return False
+
+            def __pushToBuffer(self):
+                self.dataBuffer.extend(self.frame[0:self.frameLength])
+
+            def removeFirstFrame(self):
+                del self.dataBuffer[0:self.frameLength]
+
+            def getLastFrame(self):
+                return self.dataBuffer[-self.frameLength]
+
+            def getAllFrames(self):
+                return self.dataBuffer
+
+            def clearBuffer(self):
+                self.dataBuffer = []
+
+            def isDataBufferFull(self):
+                if(len(self.dataBuffer)>5*self.frameLength):
+                    return True
+                else:
+                    return False
