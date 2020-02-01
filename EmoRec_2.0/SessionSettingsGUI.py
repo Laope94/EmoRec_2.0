@@ -42,6 +42,12 @@ class SessionSettings(object):
         self.dropdownWindowLength = tk.OptionMenu(self.frame,self.selectedWindowLength,*('2','3','4','5','6','7','8','9','10'))
         self.dropdownWindowLength.config(relief='sunken', borderwidth=0.5, background='white', activebackground='white', width=100)
 
+        self.labelBufferSize = tk.Label(self.frame,text='Výber veľkosti buffera (b) :')
+        self.selectedBufferSize = tk.StringVar(self.master)
+        self.selectedBufferSize.set('1024')
+        self.dropdownBufferSize = tk.OptionMenu(self.frame,self.selectedBufferSize,*('8','16','32','64','128','256','512','1024','2048'))
+        self.dropdownBufferSize.config(relief='sunken', borderwidth=0.5, background='white', activebackground='white', width=100)
+
         self.labelLoadFile = tk.Label(self.frame,text='Načítať zo súboru', font=('',15,'bold'))
         self.entryFilePath = tk.Entry(self.frame, state='readonly')
         self.entryFilePath.config(readonlybackground='white')
@@ -58,11 +64,13 @@ class SessionSettings(object):
         self.dropdownSampleRate.grid(row=2, column=1, padx=5, pady=5)
         self.labelWindowLength.grid(row=3,column=0,padx=2,pady=5, sticky='e')
         self.dropdownWindowLength.grid(row=3, column=1, padx=5, pady=5)
-        self.buttonConfirmSettings.grid(row=4,column=0, columnspan=2, padx=10, pady=5)
-        self.labelLoadFile.grid(row=5,column=0,columnspan=2,padx=10,pady=10,sticky='w')
-        self.buttonFileDialog.grid(row=6, column= 0, padx=10,pady=5)
-        self.entryFilePath.grid(row=6,column=1,padx=5,pady=5,sticky='ew')
-        self.buttonConfirmFileSelection.grid(row=7,column=0,columnspan=2,padx=10,pady=5)
+        self.labelBufferSize.grid(row=4,column=0,padx=2,pady=5,sticky='e')
+        self.dropdownBufferSize.grid(row=4, column=1, padx=5, pady=5)
+        self.buttonConfirmSettings.grid(row=5,column=0, columnspan=2, padx=10, pady=5)
+        self.labelLoadFile.grid(row=6,column=0,columnspan=2,padx=10,pady=10,sticky='w')
+        self.buttonFileDialog.grid(row=7, column= 0, padx=10,pady=5)
+        self.entryFilePath.grid(row=7,column=1,padx=5,pady=5,sticky='ew')
+        self.buttonConfirmFileSelection.grid(row=8,column=0,columnspan=2,padx=10,pady=5)
 
     # zbalí nastavenia session a cez destroyItself funkciu ich odošle ako parameter do funkcie rodiča
     # packs session settings and sends them as parameter to parent function through destroyItself function
@@ -71,6 +79,7 @@ class SessionSettings(object):
         packedVariables['deviceID'] = help.getValueByKey(self.deviceList,self.selectedDevice.get())
         packedVariables['sampleRate'] = int(self.selectedSampleRate.get())
         packedVariables['windowLength'] = int(self.selectedWindowLength.get())
+        packedVariables['bufferSize']= int(self.selectedBufferSize.get())
         self.destroyItself(None, packedVariables)
 
     # cez destroyItself funkciu odošle cestu k vybranému súboru do funkcie rodiča

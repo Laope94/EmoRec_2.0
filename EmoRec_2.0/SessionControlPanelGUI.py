@@ -6,7 +6,6 @@
 
 import tkinter as tk
 from HelperFunctions import HelperFunctions as help
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -21,6 +20,7 @@ class SessionControlPanel(object):
             self.deviceID = help.getValueByKey(packedVariables,'deviceID')
             self.sampleRate = help.getValueByKey(packedVariables,'sampleRate')
             self.windowLength = help.getValueByKey(packedVariables,'windowLength')
+            self.bufferSize = help.getValueByKey(packedVariables,'bufferSize')
         else:
             self.pathfile = pathfile
 
@@ -35,8 +35,8 @@ class SessionControlPanel(object):
         self.fig.set_facecolor('#F0F0F0')
         self.fig.subplots_adjust(left=0.05, bottom=0.15, right=0.99, top=0.95, wspace=0, hspace=0)
         self.graph = self.fig.add_subplot(111)
-        self.graph.plot(np.zeros(4000))
         self.graph.set_ylim(-1,1)
+        self.graph.set_xlim(0,self.windowLength*self.sampleRate*5)
         self.plotCanvas = FigureCanvasTkAgg(self.fig,master=self.frame)
         self.plotCanvas.draw()
 
@@ -91,13 +91,13 @@ class SessionControlPanel(object):
 
     def redrawGraph(self):
         self.graph.clear()
-        self.graph.set_xlim(0,480000)
+        self.graph.set_xlim(0,self.sampleRate*self.windowLength*5)
         self.graph.set_ylim(-1,1)
         self.graph.plot(self.numpyData)
         self.plotCanvas.draw()
 
     def startStreamAndUpdateUI(self):
-        self.inputController.startStream(self.deviceID,self.sampleRate,self.dataGrabber)
+        self.inputController.startStream(self.deviceID,self.sampleRate,self.windowLength,self.bufferSize,self.dataGrabber)
         help.lockWidget(*(self.buttonStartStream,self.buttonSettings))
         help.unlockWidget(self.buttonStopStream)
 

@@ -6,7 +6,6 @@
 
 import sounddevice as sd # https://python-sounddevice.readthedocs.io/en/0.3.14/
 import queue
-import numpy as np
 from threading import Thread
 
 # táto trieda obsahuje funkcie, ktoré ovládajú vstupné zariadenia a prúd údajov z nich
@@ -34,15 +33,15 @@ class InputController(object):
     # poznámka k parametru dataGrabber - parameter obsahuje referenciu na dataGrabber funkciu, ktorá by sa mala nachádzať v triede vytvárajúcej GUI, v prípade, že GUI sa bude updatovať na základe dát zo streamu
     # function creates thread for function that opens stream - prevents GUI from freezing
     # note to dataGrabber parameter - parameter should contain reference to dataGrabber function, which should be defined in GUI creating class in case that GUI needs to be regulary updated with data from stream
-    def startStream(self, deviceID, samplerate, dataGrabber):
-        self.streamWorkerThread = Thread(target = self.__startStreamWorker, args=(deviceID,samplerate,dataGrabber))
+    def startStream(self, deviceID, samplerate, windowLength, bufferSize, dataGrabber):
+        self.streamWorkerThread = Thread(target = self.__startStreamWorker, args=(deviceID,samplerate,windowLength,bufferSize,dataGrabber))
         self.streamWorkerThread.start()
         self.runningWorker = True
     
     # funkcia, ktorá otvára stream, nedoporučuje sa volať priamo, pretože blokuje mainloop, volá sa cez startStream()
     # function opening data stream, not advised to call directly since it's blocking mainloop, call startStream() instead
-    def __startStreamWorker(self, deviceID, samplerate, dataGrabber):
-        self.streamWorker = self.StreamWorker(deviceID,samplerate,dataGrabber)
+    def __startStreamWorker(self, deviceID, samplerate,windowLength,bufferSize,dataGrabber):
+        self.streamWorker = self.StreamWorker(deviceID,samplerate,windowLength,bufferSize,dataGrabber)
         self.streamWorker.run()
 
     # funkcia, ktorá zastavuje workera a zároveň zastavuje vlákno na ktorom worker beží
@@ -55,18 +54,20 @@ class InputController(object):
     # # class StreamWorker is nested class of InputController and it handles creating and closing data stream 
     class StreamWorker(object):
 
-        def __init__(self, deviceID, samplerate, dataGrabber):
+        def __init__(self, deviceID, samplerate, windowLength, bufferSize, dataGrabber):
             self.isRunning = True
             self.deviceID = deviceID
             self.samplerate = samplerate
             self.dataGrabber = dataGrabber
+            self.windowLength = windowLength
+            self.bufferSize = bufferSize
 
             # mechanizmus bufferovania - queue je FIFO štruktúra, ktorú tento program používa na krátkodobé uchovávanie malého množstva údajov zo streamu
             # dataBuffer je pole, do ktorého sa pridá blok údajov z queue ak je queue plná
             # mechanism of buffering - queue is FIFO structure, in this program it's used for short-therm saving of small amount of data from stream
             # dataBuffer is array, if queue is full, block of data is appended to array 
             #self.q = queue.Queue()
-            self.dataBuffer = self.DataBuffer(self.samplerate,2)
+            self.dataBuffer = self.DataBuffer(self.samplerate,self.windowLength)
 
         def terminate(self):
             self.isRunning = False
@@ -76,7 +77,7 @@ class InputController(object):
             # zatial nie je možné používať viacero vstupných kanálov naraz (channels = 1)
             # opens data stream from device with given ID and with given sample rate
             # it's not possible to use multiple input channels at once (channels = 1)
-            with sd.InputStream(samplerate=self.samplerate,channels=1,device=self.deviceID, blocksize=1024, callback=self.__dataToQueue): 
+            with sd.InputStream(samplerate=self.samplerate,channels=1,device=self.deviceID, blocksize=self.bufferSize, callback=self.__dataToQueue): 
                 while self.isRunning:
                     if(self.dataBuffer.pushToFrame()): # ak sa buffer naplní do určitej veľkosti | if buffers fills with certain amount of data
                         if(self.dataBuffer.isDataBufferFull()):
