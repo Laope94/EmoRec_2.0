@@ -4,21 +4,21 @@
 # Diplomová práca | Diploma thesis
 # Bc. Timotej Sulka
 
+# táto trieda obsahuje pomocné funkcie, ktoré využívajú viaceré triedy
+# this class contains helper functions commonly used by other classes
 class HelperFunctions(object):
-    # táto trieda obsahuje pomocné funkcie, ktoré využívajú viaceré triedy
-    # this class contains helper functions commonly used by other classes
 
-    # zamknúť prvok GUI | lock GUI element
+    # zamkne jeden alebo viac GUI prvkov | locks one or more GUI elements
     def lockWidget(*widget):
         for w in widget:
             w.config(state='disabled')
 
-    # odomknúť prvok GUI | unlock GUI element
+    # odomkne jeden alebo viac GUI prvkov | unlocks one or more GUI elements
     def unlockWidget(*widget):
         for w in widget:
             w.config(state='normal')
 
-    # nastaviť prvok GUI iba na čítanie | set GUI element as readonly
+    # nastaví jeden alebo viac GUI prvkov iba na čítanie | sets one or more GUI elements as readonly
     # prvok znovu umožní zápis po použití funkcie unlockWidget() | element allows writing again after calling unlockWidget() function
     def readonlyWidget(*widget):
         for w in widget:
