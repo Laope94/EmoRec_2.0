@@ -21,6 +21,9 @@ class SessionControlPanel(object):
             self.sampleRate = help.getValueByKey(packedVariables,'sampleRate')
             self.windowLength = help.getValueByKey(packedVariables,'windowLength')
             self.bufferSize = help.getValueByKey(packedVariables,'bufferSize')
+            self.maxDataSize = self.sampleRate*self.windowLength*5
+            self.indices = list(range(self.maxDataSize))
+            self.extendX = True
         else:
             self.pathfile = pathfile
 
@@ -34,11 +37,12 @@ class SessionControlPanel(object):
         self.fig = Figure(figsize=(10,2))
         self.fig.set_facecolor('#F0F0F0')
         self.fig.subplots_adjust(left=0.05, bottom=0.15, right=0.99, top=0.95, wspace=0, hspace=0)
-        self.graph = self.fig.add_subplot(111)
-        self.graph.set_ylim(-1,1)
-        self.graph.set_xlim(0,self.windowLength*self.sampleRate*5)
-        self.plotCanvas = FigureCanvasTkAgg(self.fig,master=self.frame)
-        self.plotCanvas.draw()
+        self.waveformPlot = self.fig.add_subplot(111)
+        self.waveformPlot.set_ylim(-1,1)
+        self.waveformPlot.set_xlim(0,self.windowLength*self.sampleRate*5)
+        self.waveform, = self.waveformPlot.plot([],[])
+        self.canvas = FigureCanvasTkAgg(self.fig,master=self.frame)
+        self.canvas.draw()
 
         self.buttonStartStream = tk.Button(self.frame, text='Štart', command= self.startStreamAndUpdateUI)
         self.buttonStartStream.config(width=20,height=2)
@@ -59,14 +63,14 @@ class SessionControlPanel(object):
         self.buttonSettings.config(width=20,height=2)
 
         #grid placement
-        self.plotCanvas.get_tk_widget().grid(row=0,column=0, rowspan = 3, padx=10, pady=10)
+        self.canvas.get_tk_widget().grid(row=0,column=0, rowspan = 3, padx=10, pady=10)
         self.buttonStartStream.grid(row=0,column=1, padx=10, pady=5)
         self.buttonStopStream.grid(row=1,column=1, padx=10, pady=5)
         self.buttonStartPlayback.grid(row=2,column=1, padx=10, pady=5)
         self.buttonStopPlayback.grid(row=3,column=1, padx=10, pady=5)
         self.buttonShowLog.grid(row=4,column=1, padx=10, pady=5)
         self.buttonSettings.grid(row=5, column=1, padx=10, pady=5)
-        self.initialLock()
+        self.__initialLock()
 
     def isStreamMode(self,filepath):
         if(filepath==None):
@@ -74,7 +78,7 @@ class SessionControlPanel(object):
         else: 
             return False
 
-    def initialLock(self):
+    def __initialLock(self):
         if(self.streamMode):
             help.lockWidget(*(self.buttonStopStream, self.buttonStartPlayback, self.buttonStopPlayback, self.buttonShowLog))
         else: 
@@ -86,15 +90,16 @@ class SessionControlPanel(object):
         self.parent.createSessionSettings(self.master)
 
     def dataGrabber(self,data):
-        self.numpyData = data
-        self.master.after(0, self.redrawGraph)
+        self.master.after(0, lambda : self.redrawWaveform(data))
 
-    def redrawGraph(self):
-        self.graph.clear()
-        self.graph.set_xlim(0,self.sampleRate*self.windowLength*5)
-        self.graph.set_ylim(-1,1)
-        self.graph.plot(self.numpyData)
-        self.plotCanvas.draw()
+    def redrawWaveform(self, data):
+        if(self.extendX):
+            self.waveform.set_xdata(self.indices[0:len(data)])
+            if(len(data)==self.maxDataSize):
+                self.extendX = False
+        self.waveform.set_ydata(data)
+        self.canvas.draw()
+        self.canvas.flush_events()
 
     def startStreamAndUpdateUI(self):
         self.inputController.startStream(self.deviceID,self.sampleRate,self.windowLength,self.bufferSize,self.dataGrabber)
@@ -105,3 +110,4 @@ class SessionControlPanel(object):
         self.inputController.streamStop()
         help.lockWidget(self.buttonStopStream)
         help.unlockWidget(*(self.buttonStartStream, self.buttonSettings))
+        self.extendX = True
