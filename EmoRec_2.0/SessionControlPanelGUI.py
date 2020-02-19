@@ -14,8 +14,9 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationTool
 # GUI class containing widgets controlling input from microphone and file analysis
 class SessionControlPanel(object):
 
-    def __init__(self, parent, master, pathfile, packedVariables, inputController):
+    def __init__(self, parent, master, pathfile, packedVariables, inputController, predictionController):
         self.inputController = inputController # referencia na controller ovládajúci stream | reference to controller of stream
+        self.predictionController = predictionController
         self.streamMode = self.isStreamMode(pathfile) # True/False premenná, ktorá určuje či sa má GUI prispôsobiť vstupu zo streamu alebo analýze hotového súboru | True/False variable that determines if GUI is supposed to customise to stream input or file analysis
 
         if(self.streamMode): # v móde vstupu zo streamu sa rozbalia premenné | in stream mode variables are unpacked
@@ -126,7 +127,7 @@ class SessionControlPanel(object):
         
     # začne stream v InputControlleri a upraví GUI | starts stream in InputController and updates GUI
     def startStreamAndUpdateUI(self):
-        self.inputController.startStream(self.deviceID,self.sampleRate,self.windowLength,self.bufferSize,self.dataGrabber)
+        self.inputController.startStream(self.deviceID,self.sampleRate,self.windowLength,self.bufferSize,self.dataGrabber,self.predictionController.predictEmotion)
         help.lockWidget(*(self.buttonStartStream,self.buttonSettings))
         help.unlockWidget(self.buttonStopStream)
 

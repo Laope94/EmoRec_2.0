@@ -33,15 +33,15 @@ class InputController(object):
     # poznámka k parametru dataGrabber - parameter obsahuje referenciu na dataGrabber funkciu, ktorá by sa mala nachádzať v triede vytvárajúcej GUI, v prípade, že GUI sa bude updatovať na základe dát zo streamu
     # function creates thread for function that opens stream - prevents GUI from freezing
     # note to dataGrabber parameter - parameter should contain reference to dataGrabber function, which should be defined in GUI creating class in case that GUI needs to be regulary updated with data from stream
-    def startStream(self, deviceID, samplerate, windowLength, bufferSize, dataGrabber):
-        self.streamWorkerThread = Thread(target = self.__startStreamWorker, args=(deviceID,samplerate,windowLength,bufferSize,dataGrabber))
+    def startStream(self, deviceID, samplerate, windowLength, bufferSize, dataGrabber, predictEmotion):
+        self.streamWorkerThread = Thread(target = self.__startStreamWorker, args=(deviceID,samplerate,windowLength,bufferSize,dataGrabber,predictEmotion))
         self.streamWorkerThread.start()
         self.runningWorker = True
     
     # funkcia, ktorá otvára stream, nedoporučuje sa volať priamo, pretože blokuje mainloop, volá sa cez startStream()
     # function opening data stream, not advised to call directly since it's blocking mainloop, call startStream() instead
-    def __startStreamWorker(self, deviceID, samplerate,windowLength,bufferSize,dataGrabber):
-        self.streamWorker = self.StreamWorker(deviceID,samplerate,windowLength,bufferSize,dataGrabber)
+    def __startStreamWorker(self, deviceID, samplerate,windowLength,bufferSize,dataGrabber,predictEmotion):
+        self.streamWorker = self.StreamWorker(deviceID,samplerate,windowLength,bufferSize,dataGrabber,predictEmotion)
         self.streamWorker.run()
 
     # funkcia, ktorá zastavuje workera a zároveň zastavuje vlákno na ktorom worker beží | function that that stops worker and thread that runs worker
@@ -53,11 +53,12 @@ class InputController(object):
     # class StreamWorker is nested class of InputController and it handles creating and closing data stream 
     class StreamWorker(object):
 
-        def __init__(self, deviceID, samplerate, windowLength, bufferSize, dataGrabber):
+        def __init__(self, deviceID, samplerate, windowLength, bufferSize, dataGrabber, predictEmotion):
             self.isRunning = True # flag, ktorý určuje či má worker stále bežať | flag that determines if is worker supposed to stay in running state
             self.deviceID = deviceID
             self.samplerate = samplerate # určuje počet vzoriek za sekundu | determines samples per second
             self.dataGrabber = dataGrabber  # funkcia definovaná v inej triede, slúži na pravidelné odosielanie dát zo streamu do GUI | function defined in some other class, generally serves for sending data from stream to GUI regulary
+            self.predictEmotion = predictEmotion
             self.windowLength = windowLength # dĺžka okna v sekundách
             self.bufferSize = bufferSize # veľkosť buffera ovládača zariadenia | size of device driver buffer
             self.dataBuffer = self.DataBuffer(self.samplerate,self.windowLength)
@@ -74,9 +75,16 @@ class InputController(object):
                     if(self.dataBuffer.pushToFrame()):
                         if(self.dataBuffer.isDataBufferFull()):
                             self.dataBuffer.removeFirstFrame()
-                        self.sendDataThread = Thread(target = self.dataGrabber, args=(self.dataBuffer.getAllFrames(),)) # posiela dáta do dataGrabber funkcie | sends data to dataGrabber function
+                        #self.sendDataThread = Thread(target = self.dataGrabber, args=(self.dataBuffer.getAllFrames(),)) 
+                        #self.sendDataThread.start()
+                        #self.dataGrabber(self.dataBuffer.getAllFrames()) # posiela dáta do dataGrabber funkcie | sends data to dataGrabber function
+                        self.sendDataThread = Thread(target=self.sendData)
                         self.sendDataThread.start()
-                        
+
+        def sendData(self):
+            self.predictEmotion(self.dataBuffer.getLastFrame(),self.samplerate,self.windowLength)
+            self.dataGrabber(self.dataBuffer.getAllFrames())
+
         # callback funkcia, ktorá priebežne ukladá dáta z prúdu do queue | callback function constantly saving data from stream to queue
         def __dataToQueue(self,indata,frames,time,status):
             if(status):
@@ -124,7 +132,7 @@ class InputController(object):
             
             # vráti posledný frame z buffera | returns last frame of buffer
             def getLastFrame(self):
-                return self.dataBuffer[-self.frameLength]
+                return self.dataBuffer[-self.frameLength:]
 
             # vráti celý buffer | returns whole buffer
             def getAllFrames(self):

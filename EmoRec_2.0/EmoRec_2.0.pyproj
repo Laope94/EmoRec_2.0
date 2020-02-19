@@ -31,12 +31,23 @@
     <Compile Include="InputController.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="PredictionController.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="SessionControlPanelGUI.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="SessionSettingsGUI.py">
       <SubType>Code</SubType>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="data\" />
+    <Folder Include="model\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="data\scaling_parameters.data" />
+    <Content Include="model\mfcc_1dconvolution_model.h5" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
