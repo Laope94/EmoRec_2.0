@@ -18,6 +18,7 @@ class PredictionController(object):
         self.N_MFCC = 13
         self.N_FFT = 800
         self.HOP_LENGTH = 400
+        self.logger = self.Logger()
         with open(os.path.join('data', 'scaling_parameters.data'), 'rb') as f:
             self.min = pickle.load(f)
             self.max = pickle.load(f)
@@ -25,15 +26,15 @@ class PredictionController(object):
     def predictEmotion(self, data, samplerate, windowLength):
         self.data = np.array(data).ravel()
         self.data = self.normalizeAndTrim(self.data)
-        if(self.isSilence(self.data,samplerate,windowLength)):
-            print('silence')
-        else:
-            toPredict = self.getInterpolatedFeatures(self.data,samplerate)
-            with self.session.as_default():
-                with self.graph.as_default():
-                    prediction = self.classifier.predict(toPredict)
-                    predicted_class_indices=np.argmax(prediction,axis=1)[0]
-                    print(predicted_class_indices)
+        #if(self.isSilence(self.data,samplerate,windowLength)):
+            #print('silence')
+        #else:
+        toPredict = self.getInterpolatedFeatures(self.data,samplerate)
+        with self.session.as_default():
+            with self.graph.as_default():
+                prediction = self.classifier.predict(toPredict)
+                self.logger.putPrediction(np.argmax(prediction,axis=1)[0])
+        return self.logger.getLastEmotions()
 
     def getInterpolatedFeatures(self, data, samplerate):     
         mfcc = librosa.feature.mfcc(data, samplerate, n_fft=self.N_FFT, hop_length=self.HOP_LENGTH, n_mfcc=self.N_MFCC)
@@ -63,3 +64,26 @@ class PredictionController(object):
             return True
         else: 
             return False
+
+    def clearLogger(self):
+        self.logger.clearLogger()
+
+    class Logger(object):
+        def __init__(self):
+            self.emotions = []
+
+        def putPrediction(self,prediction):
+            self.emotions.append(prediction)
+            if(len(self.emotions)>5):
+                del self.emotions[0]
+
+        def getLastEmotions(self):
+            lastEmotions = np.array(self.emotions)
+            if(len(self.emotions)<5):
+                filler = np.empty((5-len(self.emotions),))
+                filler[:] = np.NaN
+                lastEmotions = np.concatenate((lastEmotions,filler),axis=0)
+            return np.expand_dims(lastEmotions,axis=0)
+
+        def clearLogger(self):
+            self.emotions = []

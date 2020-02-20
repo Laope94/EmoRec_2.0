@@ -82,8 +82,8 @@ class InputController(object):
                         self.sendDataThread.start()
 
         def sendData(self):
-            self.predictEmotion(self.dataBuffer.getLastFrame(),self.samplerate,self.windowLength)
-            self.dataGrabber(self.dataBuffer.getAllFrames())
+            predictions = self.predictEmotion(self.dataBuffer.getLastFrame(),self.samplerate,self.windowLength)
+            self.dataGrabber(self.dataBuffer.getAllFrames(),predictions)
 
         # callback funkcia, ktorá priebežne ukladá dáta z prúdu do queue | callback function constantly saving data from stream to queue
         def __dataToQueue(self,indata,frames,time,status):

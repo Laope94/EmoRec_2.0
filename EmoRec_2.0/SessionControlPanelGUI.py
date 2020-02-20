@@ -9,6 +9,7 @@ from HelperFunctions import HelperFunctions as help
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib import colors, patches
 
 # trieda GUI obsahujúca prvky ovládajúce vstup z mikrofónu a analýzy súboru
 # GUI class containing widgets controlling input from microphone and file analysis
@@ -37,13 +38,28 @@ class SessionControlPanel(object):
         self.frame.grid(column=0,row=0, sticky='nwes', padx=10,pady=10)
 
         # vytvára tkinter widgety | creates tkinter widgets
-        self.fig = Figure(figsize=(10,2))
+        self.fig = Figure(figsize=(10,4))
         self.fig.set_facecolor('#F0F0F0')
-        self.fig.subplots_adjust(left=0.05, bottom=0.15, right=0.99, top=0.95, wspace=0, hspace=0)
-        self.waveformPlot = self.fig.add_subplot(111)
+        self.fig.subplots_adjust(left=0.05, bottom=0.15, right=0.99, top=0.95, wspace=0, hspace=0.2)
+        self.waveformPlot = self.fig.add_subplot(211)
         self.waveformPlot.set_ylim(-1,1)
         self.waveformPlot.set_xlim(0,self.windowLength*self.sampleRate*5)
+        self.waveformPlot.axes.get_xaxis().set_visible(False)
         self.waveform, = self.waveformPlot.plot([],[])
+        self.emotionPlot = self.fig.add_subplot(212)
+        self.emotionPlot.set_ylim(0,1)
+        self.emotionPlot.set_xlim(0,5)
+        self.emotionPlot.axes.get_yaxis().set_visible(False)
+        self.cmap = colors.ListedColormap(['red','orange','purple','green','gray','blue','pink','white'])
+        self.bounds = [0,0.9,1.9,2.9,3.9,4.9,5.9,6.9,7]
+        self.norm = colors.BoundaryNorm(self.bounds,self.cmap.N)
+        self.emotions = self.emotionPlot.imshow([[]], aspect='auto',extent=(0,5,0,1),cmap=self.cmap,norm=self.norm)
+        self.emotionList = ['hnev','znechutenie','strach','radosť','neutrál','smútok','prekvapenie','ticho']
+        self.c = [ self.cmap(self.norm(i)) for i in range(8)]
+        self.p = [ patches.Patch(color=self.c[i], label=self.emotionList[i]) for i in range(8) ]
+        self.legend = self.emotionPlot.legend(handles=self.p, loc='upper center', bbox_to_anchor=(0.5,-0.2),fancybox=False, shadow=False, ncol=8)
+        self.legend.get_frame().set_facecolor('#F0F0F0')
+        self.legend.get_frame().set_linewidth(0)
         self.canvas = FigureCanvasTkAgg(self.fig,master=self.frame)
         self.canvas.draw()
 
@@ -66,7 +82,7 @@ class SessionControlPanel(object):
         self.buttonSettings.config(width=20,height=2)
 
         # umiestnenie widgetov v gride | placing of widgets in grid
-        self.canvas.get_tk_widget().grid(row=0,column=0, rowspan = 3, padx=10, pady=10)
+        self.canvas.get_tk_widget().grid(row=0,column=0, rowspan = 6, padx=10, pady=10)
         self.buttonStartStream.grid(row=0,column=1, padx=10, pady=5)
         self.buttonStopStream.grid(row=1,column=1, padx=10, pady=5)
         self.buttonStartPlayback.grid(row=2,column=1, padx=10, pady=5)
@@ -96,16 +112,17 @@ class SessionControlPanel(object):
         self.parent.createSessionSettings(self.master) # návrat na SessionSettingsGUI
 
     # táto funkcia slúži na získavanie údajov z InputControllera | this function gets data from InputController
-    def dataGrabber(self,data):
-        self.master.after(0, lambda : self.redrawWaveform(data)) # funkcia dataGrabber je volaná z iného vlákna, ale prekreslenie tkinter môže byť volané iba z mainloop vlákna, inak spadne | dataGrabber is called from another thread, but tkinter draw can be called only from mainloop, crashes otherwise
+    def dataGrabber(self,data,predictions):
+        self.master.after(0, lambda : self.redrawWaveform(data,predictions)) # funkcia dataGrabber je volaná z iného vlákna, ale prekreslenie tkinter môže byť volané iba z mainloop vlákna, inak spadne | dataGrabber is called from another thread, but tkinter draw can be called only from mainloop, crashes otherwise
 
     # prekreslí graf
-    def redrawWaveform(self, data):
+    def redrawWaveform(self, data, predictions):
         if(self.extendX):                                           # 
             self.waveform.set_xdata(self.indices[0:len(data)])      # pozri nižšie pre vysvetlenie tejto časti
             if(len(data)==self.maxDataSize):                        # see below for explanation of this part
                 self.extendX = False                                #
         self.waveform.set_ydata(data) # update dát | updates data
+        self.emotions.set_data(predictions)
         self.canvas.draw() # prekreslenie | redraw of plot
         self.canvas.flush_events()
         # vysvetlenie
@@ -128,6 +145,7 @@ class SessionControlPanel(object):
     # začne stream v InputControlleri a upraví GUI | starts stream in InputController and updates GUI
     def startStreamAndUpdateUI(self):
         self.inputController.startStream(self.deviceID,self.sampleRate,self.windowLength,self.bufferSize,self.dataGrabber,self.predictionController.predictEmotion)
+        self.predictionController.clearLogger()
         help.lockWidget(*(self.buttonStartStream,self.buttonSettings))
         help.unlockWidget(self.buttonStopStream)
 
