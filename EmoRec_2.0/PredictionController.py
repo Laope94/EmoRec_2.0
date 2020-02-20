@@ -1,4 +1,5 @@
 import os
+import time
 import pickle
 import numpy as np
 import librosa
@@ -33,7 +34,7 @@ class PredictionController(object):
         with self.session.as_default():
             with self.graph.as_default():
                 prediction = self.classifier.predict(toPredict)
-                self.logger.putPrediction(np.argmax(prediction,axis=1)[0])
+                self.logger.logPrediction(np.argmax(prediction,axis=1)[0],windowLength)
         return self.logger.getLastEmotions()
 
     def getInterpolatedFeatures(self, data, samplerate):     
@@ -68,22 +69,48 @@ class PredictionController(object):
     def clearLogger(self):
         self.logger.clearLogger()
 
+    def readLog(self):
+        return self.logger.getLog()
+
     class Logger(object):
         def __init__(self):
-            self.emotions = []
+            self.sessionSeconds=0
+            self.shortTermLog = []
+            self.longTermLog = []
 
-        def putPrediction(self,prediction):
-            self.emotions.append(prediction)
-            if(len(self.emotions)>5):
-                del self.emotions[0]
+        def logPrediction(self,prediction,windowLength):
+            self.shortTermLog.append(prediction)
+            if(len(self.shortTermLog)>5):
+                del self.shortTermLog[0]
+            self.longTermLog.append(self.LogRecord(self.sessionSeconds,self.sessionSeconds+windowLength,prediction))
+            self.sessionSeconds = self.sessionSeconds+windowLength
 
         def getLastEmotions(self):
-            lastEmotions = np.array(self.emotions)
-            if(len(self.emotions)<5):
-                filler = np.empty((5-len(self.emotions),))
+            emotions = np.array(self.shortTermLog)
+            if(len(self.shortTermLog)<5):
+                filler = np.empty((5-len(self.shortTermLog),))
                 filler[:] = np.NaN
-                lastEmotions = np.concatenate((lastEmotions,filler),axis=0)
-            return np.expand_dims(lastEmotions,axis=0)
+                emotions = np.concatenate((emotions,filler),axis=0)
+            return np.expand_dims(emotions,axis=0)
+
+        def getLog(self):
+            log = ''
+            for r in self.longTermLog:
+                log = log + r.toString()
+            return log
 
         def clearLogger(self):
-            self.emotions = []
+            self.time=0
+            self.shortTermLog = []
+            self.longTermLog = []
+
+        class LogRecord(object):
+            def __init__(self,startTime,endTime,emotion):
+                self.startTime = startTime
+                self.endTime = endTime
+                self.emotion = emotion
+
+            def toString(self):
+                emotionList = ['hnev','znechutenie','strach','radosť','neutrál','smútok','prekvapenie','ticho']
+                record = time.strftime('%H:%M:%S', time.gmtime(self.startTime)) + ' - ' + time.strftime('%H:%M:%S', time.gmtime(self.endTime))+ ' -- ' + emotionList[self.emotion]+'\n'
+                return record

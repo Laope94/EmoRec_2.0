@@ -5,6 +5,7 @@
 # Bc. Timotej Sulka
 
 import tkinter as tk
+from tkinter import scrolledtext
 from HelperFunctions import HelperFunctions as help
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
@@ -75,7 +76,7 @@ class SessionControlPanel(object):
         self.buttonStopPlayback  = tk.Button(self.frame, text='Zastaviť prehrávanie')
         self.buttonStopPlayback.config(width=20,height=2)
 
-        self.buttonShowLog  = tk.Button(self.frame, text='Zobraziť log')
+        self.buttonShowLog  = tk.Button(self.frame, text='Zobraziť log', command=self.readLog)
         self.buttonShowLog.config(width=20,height=2)
 
         self.buttonSettings = tk.Button(self.frame, text='Nastavenia', command=self.destroyItself)
@@ -153,5 +154,14 @@ class SessionControlPanel(object):
     def stopStreamAndUpdateUI(self):
         self.inputController.streamStop()
         help.lockWidget(self.buttonStopStream)
-        help.unlockWidget(*(self.buttonStartStream, self.buttonSettings))
+        help.unlockWidget(*(self.buttonStartStream, self.buttonSettings, self.buttonShowLog))
         self.extendX = True
+
+    def readLog(self):
+        log = self.predictionController.readLog()
+        window = tk.Toplevel(self.master)
+        sframe = tk.Frame(window)
+        scrolled = scrolledtext.ScrolledText(master=sframe, width=40, height=20)
+        scrolled.insert('1.0',log)
+        sframe.grid(column=0,row=0, sticky='nwes', padx=10,pady=10)
+        scrolled.grid(row=0,column=0)
