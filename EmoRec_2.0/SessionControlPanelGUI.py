@@ -52,7 +52,7 @@ class SessionControlPanel(object):
         self.emotionPlot.set_xlim(0,5)
         self.emotionPlot.axes.get_yaxis().set_visible(False)
         self.cmap = colors.ListedColormap(['red','orange','purple','green','gray','blue','pink','white'])
-        self.bounds = [0,0.9,1.9,2.9,3.9,4.9,5.9,6.9,7]
+        self.bounds = [0,0.9,1.9,2.9,3.9,4.9,5.9,6.9,8]
         self.norm = colors.BoundaryNorm(self.bounds,self.cmap.N)
         self.emotions = self.emotionPlot.imshow([[]], aspect='auto',extent=(0,5,0,1),cmap=self.cmap,norm=self.norm)
         self.emotionList = ['hnev','znechutenie','strach','radosť','neutrál','smútok','prekvapenie','ticho']
@@ -147,7 +147,7 @@ class SessionControlPanel(object):
     def startStreamAndUpdateUI(self):
         self.inputController.startStream(self.deviceID,self.sampleRate,self.windowLength,self.bufferSize,self.dataGrabber,self.predictionController.predictEmotion)
         self.predictionController.clearLogger()
-        help.lockWidget(*(self.buttonStartStream,self.buttonSettings))
+        help.lockWidget(*(self.buttonStartStream,self.buttonSettings, self.buttonShowLog))
         help.unlockWidget(self.buttonStopStream)
 
     # zastaví stream v InputControlleri a upraví GUI | stops stream in InputController and updates GUI
@@ -157,11 +157,13 @@ class SessionControlPanel(object):
         help.unlockWidget(*(self.buttonStartStream, self.buttonSettings, self.buttonShowLog))
         self.extendX = True
 
-    def readLog(self):
-        log = self.predictionController.readLog()
-        window = tk.Toplevel(self.master)
-        sframe = tk.Frame(window)
-        scrolled = scrolledtext.ScrolledText(master=sframe, width=40, height=20)
-        scrolled.insert('1.0',log)
-        sframe.grid(column=0,row=0, sticky='nwes', padx=10,pady=10)
-        scrolled.grid(row=0,column=0)
+    def readLog(self): 
+        logWindow = tk.Toplevel(self.master)
+        logWindow.resizable(False,False)
+        frame = tk.Frame(logWindow)
+        logText = scrolledtext.ScrolledText(master=frame, width=40, height=20)
+        logText.insert('1.0',self.predictionController.getLog())
+        help.lockWidget(logText)
+        frame.grid(column=0,row=0, sticky='nwes', padx=10,pady=10)
+        logText.grid(row=0,column=0, sticky='nwes')
+        logWindow.focus_force()

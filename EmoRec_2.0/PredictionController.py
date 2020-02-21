@@ -19,25 +19,28 @@ class PredictionController(object):
         self.N_MFCC = 13
         self.N_FFT = 800
         self.HOP_LENGTH = 400
+        self.a = librosa.db_to_amplitude(60, ref=0.00002)
         self.logger = self.Logger()
         with open(os.path.join('data', 'scaling_parameters.data'), 'rb') as f:
             self.min = pickle.load(f)
             self.max = pickle.load(f)
 
     def predictEmotion(self, data, samplerate, windowLength):
-        self.data = np.array(data).ravel()
-        self.data = self.normalizeAndTrim(self.data)
-        #if(self.isSilence(self.data,samplerate,windowLength)):
-            #print('silence')
-        #else:
-        toPredict = self.getInterpolatedFeatures(self.data,samplerate)
-        with self.session.as_default():
-            with self.graph.as_default():
-                prediction = self.classifier.predict(toPredict)
-                self.logger.logPrediction(np.argmax(prediction,axis=1)[0],windowLength)
+        self.data = np.array(data).ravel()     
+        if(self.isSilence(self.data)):
+            self.logger.logPrediction(7,windowLength)
+        else:
+            self.data = self.preprocessData(self.data,samplerate)
+            with self.session.as_default():
+                with self.graph.as_default():
+                    prediction = self.classifier.predict(self.data)
+                    self.logger.logPrediction(np.argmax(prediction,axis=1)[0],windowLength)
         return self.logger.getLastEmotions()
 
-    def getInterpolatedFeatures(self, data, samplerate):     
+    def preprocessData(self, data, samplerate):
+        data = data * self.a / np.mean(librosa.feature.rms(y=data))
+        data, index = librosa.effects.trim(y=data, top_db=28, frame_length=8, hop_length=2)
+        data = data * self.a / np.mean(librosa.feature.rms(y=data))
         mfcc = librosa.feature.mfcc(data, samplerate, n_fft=self.N_FFT, hop_length=self.HOP_LENGTH, n_mfcc=self.N_MFCC)
         zerocrossing = librosa.feature.zero_crossing_rate(y=data, hop_length=self.HOP_LENGTH,frame_length=self.N_FFT)
         energy = librosa.feature.rms(y=data,hop_length=self.HOP_LENGTH,frame_length=self.N_FFT)
@@ -53,23 +56,16 @@ class PredictionController(object):
         interpolatedFeatures = np.expand_dims(interpolatedFeatures,axis=0)
         return interpolatedFeatures
 
-    def normalizeAndTrim(self,data):
-        a = librosa.db_to_amplitude(60, ref=0.00002)
-        data = data * a / np.mean(librosa.feature.rms(y=data))
-        data, index = librosa.effects.trim(y=data, top_db=28, frame_length=8, hop_length=2)
-        data = data * a / np.mean(librosa.feature.rms(y=data))
-        return data
-
-    def isSilence(self,data,sampleRate,windowLength):
-        if(len(data)<sampleRate*windowLength*0.33):
-            return True
-        else: 
+    def isSilence(self,data):
+        if(np.max(librosa.amplitude_to_db(data))>=-10):
             return False
+        else: 
+            return True
 
     def clearLogger(self):
         self.logger.clearLogger()
 
-    def readLog(self):
+    def getLog(self):
         return self.logger.getLog()
 
     class Logger(object):
