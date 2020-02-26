@@ -16,21 +16,24 @@ from matplotlib import colors, patches
 # GUI class containing widgets controlling input from microphone and file analysis
 class SessionControlPanel(object):
 
-    def __init__(self, parent, master, pathfile, packedVariables, inputController, predictionController):
+    def __init__(self, parent, master, inputController, predictionController, filePath=None, deviceID=None, sampleRate=None, windowLength=2, bufferSize=None, streamMode=True):
         self.inputController = inputController # referencia na controller ovládajúci stream | reference to controller of stream
         self.predictionController = predictionController
-        self.streamMode = self.isStreamMode(pathfile) # True/False premenná, ktorá určuje či sa má GUI prispôsobiť vstupu zo streamu alebo analýze hotového súboru | True/False variable that determines if GUI is supposed to customise to stream input or file analysis
+        self.streamMode = streamMode # True/False premenná, ktorá určuje či sa má GUI prispôsobiť vstupu zo streamu alebo analýze hotového súboru | True/False variable that determines if GUI is supposed to customise to stream input or file analysis
 
-        if(self.streamMode): # v móde vstupu zo streamu sa rozbalia premenné | in stream mode variables are unpacked
-            self.deviceID = help.getValueByKey(packedVariables,'deviceID')
-            self.sampleRate = help.getValueByKey(packedVariables,'sampleRate')
-            self.windowLength = help.getValueByKey(packedVariables,'windowLength')
-            self.bufferSize = help.getValueByKey(packedVariables,'bufferSize')
+        self.deviceID = deviceID
+        self.sampleRate = sampleRate
+        self.windowLength = windowLength
+        self.bufferSize = bufferSize
+
+        if(self.streamMode): # v móde vstupu zo streamu sa rozbalia premenné | in stream mode variables are unpacked       
             self.maxDataSize = self.sampleRate*self.windowLength*5 # určuje maximálny počet vzoriek, ktoré budú vykreslené na grafe - 5 okien | determines maximum samples that will be plotted - 5 windows
             self.indices = list(range(self.maxDataSize)) # časť optimalizácie vykreslovania, pozri funkciu redrawWaveform() | part of plotting optimization, see redrawWaveform() function
             self.extendX = True # rovnako ako predchádzajúca premenná | same as variable above
         else: # v móde analýzy súboru sa uloží cesta k súboru | in file analysis mode path to file is saved
-            self.pathfile = pathfile
+            self.inputController.createPlayer(filePath)
+            self.sampleRate = self.inputController.getPlayerSampleRate()
+            self.predictedEmotions = self.predictionController.predictFromFile(self.inputController.getPlayerSamples(),self.sampleRate,self.windowLength)
 
         self.master = master
         self.parent = parent
@@ -44,17 +47,29 @@ class SessionControlPanel(object):
         self.fig.subplots_adjust(left=0.05, bottom=0.15, right=0.99, top=0.95, wspace=0, hspace=0.2)
         self.waveformPlot = self.fig.add_subplot(211)
         self.waveformPlot.set_ylim(-1,1)
-        self.waveformPlot.set_xlim(0,self.windowLength*self.sampleRate*5)
+        if(self.streamMode):
+            self.waveformPlot.set_xlim(0,self.windowLength*self.sampleRate*5)
+        else:
+            self.waveformPlot.set_xlim(0,len(self.inputController.getPlayerSamples()))
         self.waveformPlot.axes.get_xaxis().set_visible(False)
-        self.waveform, = self.waveformPlot.plot([],[])
+        if(self.streamMode):
+            self.waveform, = self.waveformPlot.plot([],[])
+        else:
+            self.waveform, = self.waveformPlot.plot(range(len(self.inputController.getPlayerSamples())),self.inputController.getPlayerSamples())
         self.emotionPlot = self.fig.add_subplot(212)
         self.emotionPlot.set_ylim(0,1)
-        self.emotionPlot.set_xlim(0,5)
+        if(self.streamMode):     
+            self.emotionPlot.set_xlim(0,5)
+        else:
+            self.emotionPlot.set_xlim(0,len(self.predictedEmotions))
         self.emotionPlot.axes.get_yaxis().set_visible(False)
         self.cmap = colors.ListedColormap(['red','orange','purple','green','gray','blue','pink','white'])
         self.bounds = [0,0.9,1.9,2.9,3.9,4.9,5.9,6.9,8]
         self.norm = colors.BoundaryNorm(self.bounds,self.cmap.N)
-        self.emotions = self.emotionPlot.imshow([[]], aspect='auto',extent=(0,5,0,1),cmap=self.cmap,norm=self.norm)
+        if(self.streamMode):
+            self.emotions = self.emotionPlot.imshow([[]], aspect='auto',extent=(0,5,0,1),cmap=self.cmap,norm=self.norm)
+        else:
+            self.emotions = self.emotionPlot.imshow([self.predictedEmotions], aspect='auto',extent=(0,len(self.predictedEmotions),0,1),cmap=self.cmap,norm=self.norm)
         self.emotionList = ['hnev','znechutenie','strach','radosť','neutrál','smútok','prekvapenie','ticho']
         self.c = [ self.cmap(self.norm(i)) for i in range(8)]
         self.p = [ patches.Patch(color=self.c[i], label=self.emotionList[i]) for i in range(8) ]
@@ -70,10 +85,10 @@ class SessionControlPanel(object):
         self.buttonStopStream = tk.Button(self.frame, text='Stop', command = self.stopStreamAndUpdateUI)
         self.buttonStopStream.config(width=20,height=2)
 
-        self.buttonStartPlayback = tk.Button(self.frame, text='Prehrať')
+        self.buttonStartPlayback = tk.Button(self.frame, text='Prehrať', command= self.startPlayback)
         self.buttonStartPlayback.config(width=20,height=2)
 
-        self.buttonStopPlayback  = tk.Button(self.frame, text='Zastaviť prehrávanie')
+        self.buttonStopPlayback  = tk.Button(self.frame, text='Zastaviť prehrávanie', command= self.stopPlayback)
         self.buttonStopPlayback.config(width=20,height=2)
 
         self.buttonShowLog  = tk.Button(self.frame, text='Zobraziť log', command=self.readLog)
@@ -92,19 +107,12 @@ class SessionControlPanel(object):
         self.buttonSettings.grid(row=5, column=1, padx=10, pady=5)
         self.__initialLock()
 
-    # určí v akom móde má GUI pracovať podla toho či existuje cesta k súboru alebo nie | determines in which mode is GUI supposed to work by existence of path to file (if path to file doesn't exists, packedVariables should exist and vice versa)
-    def isStreamMode(self,filepath):
-        if(filepath==None):
-            return True
-        else: 
-            return False
-
     # zamkne niektoré prvky GUI podla módu | locks some GUI widgets, mode dependent
     def __initialLock(self):
         if(self.streamMode):
             help.lockWidget(*(self.buttonStopStream, self.buttonStartPlayback, self.buttonStopPlayback, self.buttonShowLog))
         else: 
-            help.lockWidget(*(self.buttonStartStream, self.buttonStopStream, self.buttonStopPlayback))
+            help.lockWidget(*(self.buttonStartStream, self.buttonStopStream))
     
     # vymaže SessionControlPanelGUI frame z hlavného okna | removes SessionControlPanelGUI frame from main window
     def destroyItself(self):
@@ -145,7 +153,7 @@ class SessionControlPanel(object):
         
     # začne stream v InputControlleri a upraví GUI | starts stream in InputController and updates GUI
     def startStreamAndUpdateUI(self):
-        self.inputController.startStream(self.deviceID,self.sampleRate,self.windowLength,self.bufferSize,self.dataGrabber,self.predictionController.predictEmotion)
+        self.inputController.startStream(self.deviceID,self.sampleRate,self.windowLength,self.bufferSize,self.dataGrabber,self.predictionController.predictFromStream)
         self.predictionController.clearLogger()
         help.lockWidget(*(self.buttonStartStream,self.buttonSettings, self.buttonShowLog))
         help.unlockWidget(self.buttonStopStream)
@@ -167,3 +175,9 @@ class SessionControlPanel(object):
         frame.grid(column=0,row=0, sticky='nwes', padx=10,pady=10)
         logText.grid(row=0,column=0, sticky='nwes')
         logWindow.focus_force()
+
+    def startPlayback(self):
+        self.inputController.startPlayback()
+
+    def stopPlayback(self):
+        self.inputController.stopPlayback()

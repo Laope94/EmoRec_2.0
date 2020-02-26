@@ -5,6 +5,7 @@
 # Bc. Timotej Sulka
 
 import sounddevice as sd # https://python-sounddevice.readthedocs.io/en/0.3.14/
+import soundfile as sf # https://pysoundfile.readthedocs.io/en/latest/
 import queue
 from threading import Thread
 
@@ -48,7 +49,38 @@ class InputController(object):
     def streamStop(self):
         self.streamWorker.terminate()
         self.streamWorkerThread.join()
-        
+
+    def createPlayer(self,filePath):
+        self.player = self.Player(filePath)
+
+    def startPlayback(self):
+        self.player.play()
+
+    def stopPlayback(self):
+        self.player.stop()
+
+    def getPlayerSampleRate(self):
+        return self.player.getSampleRate()
+
+    def getPlayerSamples(self):
+        return self.player.getSamples()
+    
+    class Player(object):
+        def __init__(self, filePath):
+            self.data, self.samplerate = sf.read(filePath)
+
+        def play(self):
+            sd.play(self.data,self.samplerate)
+
+        def stop(self):
+            sd.stop()
+
+        def getSampleRate(self):
+            return self.samplerate
+
+        def getSamples(self):
+            return self.data
+
     # trieda StreamWorker je vnorená trieda InputController a stará sa o vytváranie a zatváranie prúdu údajov
     # class StreamWorker is nested class of InputController and it handles creating and closing data stream 
     class StreamWorker(object):

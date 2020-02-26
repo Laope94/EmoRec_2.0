@@ -29,8 +29,8 @@ class Main(object):
 
     # vytvára GUI s kontrolným panelom session - ovládanie vstupu, vyhodnocovanie emócií atď... 
     # creates GUI with session control panel - input controls, emotion categorization etc...
-    def createSessionControls(self,master,filepath,packedVariables):
-        SessionControlPanel(self,master,filepath,packedVariables, self.inputController, self.predictionController)
+    def createSessionControls(self,master,packedVariables):
+        SessionControlPanel(self,master,self.inputController, self.predictionController,**{k: v for k, v in packedVariables.items() if v is not None})
 
 if __name__ == '__main__':
     Main().main()

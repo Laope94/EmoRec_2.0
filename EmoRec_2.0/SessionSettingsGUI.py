@@ -47,7 +47,7 @@ class SessionSettings(object):
         self.dropdownBufferSize = tk.OptionMenu(self.frame,self.selectedBufferSize,*('8','16','32','64','128','256','512','1024','2048'))
         self.dropdownBufferSize.config(relief='sunken', borderwidth=0.5, background='white', activebackground='white', width=100)
 
-        self.buttonConfirmSettings = tk.Button(self.frame, text='Začať session', state='disabled', command=self.sendPackedSettings)
+        self.buttonConfirmSettings = tk.Button(self.frame, text='Začať session', state='disabled', command=self.sendSettings)
         self.buttonConfirmSettings.config(width=20,height=2)
 
         self.labelLoadFile = tk.Label(self.frame,text='Načítať zo súboru', font=('',15,'bold'))
@@ -76,25 +76,22 @@ class SessionSettings(object):
 
     # zbalí nastavenia session a cez destroyItself funkciu ich odošle ako parameter do funkcie rodiča
     # packs session settings and sends them as parameter to parent function through destroyItself function
-    def sendPackedSettings(self):
-        packedVariables = dict()
-        packedVariables['deviceID'] = help.getValueByKey(self.deviceList,self.selectedDevice.get())
-        packedVariables['sampleRate'] = int(self.selectedSampleRate.get())
-        packedVariables['windowLength'] = int(self.selectedWindowLength.get())
-        packedVariables['bufferSize']= int(self.selectedBufferSize.get())
-        self.destroyItself(None, packedVariables)
+    def sendSettings(self):
+        packedVariables = dict(filePath=None,deviceID=help.getValueByKey(self.deviceList,self.selectedDevice.get()),sampleRate=int(self.selectedSampleRate.get()),windowLength=int(self.selectedWindowLength.get()),bufferSize=int(self.selectedBufferSize.get()),streamMode=None)
+        self.destroyItself(packedVariables)
 
     # cez destroyItself funkciu odošle cestu k vybranému súboru do funkcie rodiča
     # send path to selected file as parameter to parent function through destroyItself function
     def sendFilePath(self):
-        self.destroyItself(self.entryFilePath.get(),None)
+        packedVariables=dict(filePath=self.entryFilePath.get(),deviceID=None,sampleRate=None,windowLength=int(self.selectedWindowLength.get()),bufferSize=None,streamMode=False)
+        self.destroyItself(packedVariables)
   
     # funkcia, ktorá vymaže SessionSettingsGUI frame z hlavného okna a zavolá funkciu rodiča, ktorá vytvorí frame s ovládacím panelom session
     # function that deletes SessionSettingsGUI frame from main window and calls parent function, which creates frame with session control panel
-    def destroyItself(self, filepath, packedVariables):
+    def destroyItself(self, packedVariables):
         self.frame.grid_forget()
         self.frame.destroy()
-        self.parent.createSessionControls(self.master, filepath, packedVariables)
+        self.parent.createSessionControls(self.master, packedVariables)
 
     # funkcia, ktorá otvára okno explorera pre vyhladávanie .wav súborov | function opening explorer window searching for .wav files
     def openFileDialog(self):

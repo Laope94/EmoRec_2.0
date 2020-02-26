@@ -25,17 +25,41 @@ class PredictionController(object):
             self.min = pickle.load(f)
             self.max = pickle.load(f)
 
-    def predictEmotion(self, data, samplerate, windowLength):
-        self.data = np.array(data).ravel()     
-        if(self.isSilence(self.data)):
+    def __predictEmotion(self,data,samplerate,windowLength):
+        if(self.isSilence(data)):
             self.logger.logPrediction(7,windowLength)
         else:
-            self.data = self.preprocessData(self.data,samplerate)
+            data = self.preprocessData(data,samplerate)
             with self.session.as_default():
                 with self.graph.as_default():
-                    prediction = self.classifier.predict(self.data)
+                    prediction = self.classifier.predict(data)
                     self.logger.logPrediction(np.argmax(prediction,axis=1)[0],windowLength)
+
+    def predictFromStream(self, data, samplerate, windowLength):
+        data = np.array(data).ravel()     
+        self.__predictEmotion(data,samplerate,windowLength)
         return self.logger.getLastEmotions()
+
+    def predictFromFile(self,data,samplerate,windowLength):
+        self.logger.clearLogger()
+        data = self.splitData(data,samplerate,windowLength)
+        for i in range(len(data)):
+            self.__predictEmotion(data[i],samplerate,windowLength)
+        return self.logger.getAllEmotions()
+
+    def splitData(self,data,samplerate,windowLength):
+        frameLength = windowLength*samplerate
+        sampleCount = len(data)
+        if(sampleCount<frameLength):
+            data = np.append(data,np.zeros((frameLength-sampleCount)))
+        else:
+            data = np.append(data,np.zeros((frameLength-sampleCount%frameLength)))
+        frames = int(len(data)/frameLength)
+        splittedData = []
+        for f in range(frames):
+            splittedData.append(data[f*frameLength:((f+1)*frameLength)])
+        return splittedData
+        
 
     def preprocessData(self, data, samplerate):
         data = data * self.a / np.mean(librosa.feature.rms(y=data))
@@ -57,7 +81,7 @@ class PredictionController(object):
         return interpolatedFeatures
 
     def isSilence(self,data):
-        if(np.max(librosa.amplitude_to_db(data))>=-10):
+        if(np.max(librosa.amplitude_to_db(data))>=-20):
             return False
         else: 
             return True
@@ -81,6 +105,12 @@ class PredictionController(object):
             self.longTermLog.append(self.LogRecord(self.sessionSeconds,self.sessionSeconds+windowLength,prediction))
             self.sessionSeconds = self.sessionSeconds+windowLength
 
+        def getAllEmotions(self):
+            emotions = []
+            for r in self.longTermLog:
+                emotions.append(r.getEmotion())
+            return emotions
+
         def getLastEmotions(self):
             emotions = np.array(self.shortTermLog)
             if(len(self.shortTermLog)<5):
@@ -96,7 +126,7 @@ class PredictionController(object):
             return log
 
         def clearLogger(self):
-            self.time=0
+            self.sessionSeconds=0
             self.shortTermLog = []
             self.longTermLog = []
 
@@ -105,6 +135,9 @@ class PredictionController(object):
                 self.startTime = startTime
                 self.endTime = endTime
                 self.emotion = emotion
+
+            def getEmotion(self):
+                return self.emotion
 
             def toString(self):
                 emotionList = ['hnev','znechutenie','strach','radosť','neutrál','smútok','prekvapenie','ticho']
