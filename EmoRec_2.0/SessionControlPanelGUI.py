@@ -31,7 +31,7 @@ class SessionControlPanel(object):
             self.indices = list(range(self.maxDataSize)) # časť optimalizácie vykreslovania, pozri funkciu redrawWaveform() | part of plotting optimization, see redrawWaveform() function
             self.extendX = True # rovnako ako predchádzajúca premenná | same as variable above
         else: # v móde analýzy súboru sa uloží cesta k súboru | in file analysis mode path to file is saved
-            self.inputController.createPlayer(filePath)
+            self.inputController.createPlayer(filePath,self.windowLength)
             self.sampleRate = self.inputController.getPlayerSampleRate()
             self.predictedEmotions = self.predictionController.predictFromFile(self.inputController.getPlayerSamples(),self.sampleRate,self.windowLength)
 

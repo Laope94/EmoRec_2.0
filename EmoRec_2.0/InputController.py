@@ -6,6 +6,7 @@
 
 import sounddevice as sd # https://python-sounddevice.readthedocs.io/en/0.3.14/
 import soundfile as sf # https://pysoundfile.readthedocs.io/en/latest/
+import numpy as np
 import queue
 from threading import Thread
 
@@ -50,8 +51,8 @@ class InputController(object):
         self.streamWorker.terminate()
         self.streamWorkerThread.join()
 
-    def createPlayer(self,filePath):
-        self.player = self.Player(filePath)
+    def createPlayer(self,filePath,windowLength):
+        self.player = self.Player(filePath,windowLength)
 
     def startPlayback(self):
         self.player.play()
@@ -66,8 +67,14 @@ class InputController(object):
         return self.player.getSamples()
     
     class Player(object):
-        def __init__(self, filePath):
+        def __init__(self, filePath, windowLength):
             self.data, self.samplerate = sf.read(filePath)
+            frameLength = windowLength*self.samplerate
+            sampleCount = len(self.data)
+            if(sampleCount<frameLength):
+                self.data = np.append(self.data,np.zeros((frameLength-sampleCount)))
+            else:
+                self.data = np.append(self.data,np.zeros((frameLength-sampleCount%frameLength)))
 
         def play(self):
             sd.play(self.data,self.samplerate)
