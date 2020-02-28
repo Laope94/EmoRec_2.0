@@ -28,7 +28,7 @@
     <Compile Include="Main.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="InputController.py">
+    <Compile Include="IOController.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="PredictionController.py">

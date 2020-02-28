@@ -16,8 +16,8 @@ from matplotlib import colors, patches
 # GUI class containing widgets controlling input from microphone and file analysis
 class SessionControlPanel(object):
 
-    def __init__(self, parent, master, inputController, predictionController, filePath=None, deviceID=None, sampleRate=None, windowLength=2, bufferSize=None, streamMode=True):
-        self.inputController = inputController # referencia na controller ovládajúci stream | reference to controller of stream
+    def __init__(self, parent, master, ioController, predictionController, filePath=None, deviceID=None, sampleRate=None, windowLength=2, bufferSize=None, streamMode=True):
+        self.ioController = ioController # referencia na controller ovládajúci stream | reference to controller of stream
         self.predictionController = predictionController
         self.streamMode = streamMode # True/False premenná, ktorá určuje či sa má GUI prispôsobiť vstupu zo streamu alebo analýze hotového súboru | True/False variable that determines if GUI is supposed to customise to stream input or file analysis
 
@@ -31,9 +31,9 @@ class SessionControlPanel(object):
             self.indices = list(range(self.maxDataSize)) # časť optimalizácie vykreslovania, pozri funkciu redrawWaveform() | part of plotting optimization, see redrawWaveform() function
             self.extendX = True # rovnako ako predchádzajúca premenná | same as variable above
         else: # v móde analýzy súboru sa uloží cesta k súboru | in file analysis mode path to file is saved
-            self.inputController.createPlayer(filePath,self.windowLength)
-            self.sampleRate = self.inputController.getPlayerSampleRate()
-            self.predictedEmotions = self.predictionController.predictFromFile(self.inputController.getPlayerSamples(),self.sampleRate,self.windowLength)
+            self.ioController.createPlayer(filePath,self.windowLength)
+            self.sampleRate = self.ioController.getPlayerSampleRate()
+            self.predictedEmotions = self.predictionController.predictFromFile(self.ioController.getPlayerSamples(),self.sampleRate,self.windowLength)
 
         self.master = master
         self.parent = parent
@@ -50,12 +50,12 @@ class SessionControlPanel(object):
         if(self.streamMode):
             self.waveformPlot.set_xlim(0,self.windowLength*self.sampleRate*5)
         else:
-            self.waveformPlot.set_xlim(0,len(self.inputController.getPlayerSamples()))
+            self.waveformPlot.set_xlim(0,len(self.ioController.getPlayerSamples()))
         self.waveformPlot.axes.get_xaxis().set_visible(False)
         if(self.streamMode):
             self.waveform, = self.waveformPlot.plot([],[])
         else:
-            self.waveform, = self.waveformPlot.plot(range(len(self.inputController.getPlayerSamples())),self.inputController.getPlayerSamples())
+            self.waveform, = self.waveformPlot.plot(range(len(self.ioController.getPlayerSamples())),self.ioController.getPlayerSamples())
         self.emotionPlot = self.fig.add_subplot(212)
         self.emotionPlot.set_ylim(0,1)
         if(self.streamMode):     
@@ -105,10 +105,10 @@ class SessionControlPanel(object):
         self.buttonStopPlayback.grid(row=3,column=1, padx=10, pady=5)
         self.buttonShowLog.grid(row=4,column=1, padx=10, pady=5)
         self.buttonSettings.grid(row=5, column=1, padx=10, pady=5)
-        self.__initialLock()
+        self._initialLock()
 
     # zamkne niektoré prvky GUI podla módu | locks some GUI widgets, mode dependent
-    def __initialLock(self):
+    def _initialLock(self):
         if(self.streamMode):
             help.lockWidget(*(self.buttonStopStream, self.buttonStartPlayback, self.buttonStopPlayback, self.buttonShowLog))
         else: 
@@ -153,14 +153,14 @@ class SessionControlPanel(object):
         
     # začne stream v InputControlleri a upraví GUI | starts stream in InputController and updates GUI
     def startStreamAndUpdateUI(self):
-        self.inputController.startStream(self.deviceID,self.sampleRate,self.windowLength,self.bufferSize,self.dataGrabber,self.predictionController.predictFromStream)
+        self.ioController.startStream(self.deviceID,self.sampleRate,self.windowLength,self.bufferSize,self.dataGrabber,self.predictionController.predictFromStream)
         self.predictionController.clearLogger()
         help.lockWidget(*(self.buttonStartStream,self.buttonSettings, self.buttonShowLog))
         help.unlockWidget(self.buttonStopStream)
 
     # zastaví stream v InputControlleri a upraví GUI | stops stream in InputController and updates GUI
     def stopStreamAndUpdateUI(self):
-        self.inputController.streamStop()
+        self.ioController.streamStop()
         help.lockWidget(self.buttonStopStream)
         help.unlockWidget(*(self.buttonStartStream, self.buttonSettings, self.buttonShowLog))
         self.extendX = True
@@ -177,7 +177,7 @@ class SessionControlPanel(object):
         logWindow.focus_force()
 
     def startPlayback(self):
-        self.inputController.startPlayback()
+        self.ioController.startPlayback()
 
     def stopPlayback(self):
-        self.inputController.stopPlayback()
+        self.ioController.stopPlayback()
