@@ -23,7 +23,3 @@ class HelperFunctions(object):
     def readonlyWidget(*widget):
         for w in widget:
             w.config(state='readonly')
-
-    # zo slovníka vráti hodnotu daného klúča | returns value of given key from dictionary
-    def getValueByKey(dictionary, dictionary_key):
-        return dictionary[dictionary_key]

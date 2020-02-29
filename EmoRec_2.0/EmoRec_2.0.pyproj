@@ -34,10 +34,10 @@
     <Compile Include="PredictionController.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="SessionControlPanelGUI.py">
+    <Compile Include="ControlPanelGUI.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="SessionSettingsGUI.py">
+    <Compile Include="SettingsGUI.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
