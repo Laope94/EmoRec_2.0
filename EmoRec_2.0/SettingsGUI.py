@@ -15,47 +15,47 @@ class Settings(object):
     def __init__(self, parent, master, deviceList):
         self._parent = parent # umožňuje prístup do triedy z ktorej bolo toto okno vytvorené | allows access to class which created this window
         self._master = master
-        self._master.title('EmoRec 2.0 - Nastavenia')
+        self._master.title('EmoRec 2 - Settings')
         self._deviceList = deviceList
         self._frame = tk.Frame(self._master)
         self._frame.grid(column=0,row=0, sticky='nwes', padx=10,pady=10)
 
         # vytvára tkinter widgety | creates tkinter widgets
-        labelNewSession = tk.Label(self._frame,text='Nová analýza', font=('',15,'bold'))
+        labelNewSession = tk.Label(self._frame,text='New analysis', font=('',15,'bold'))
 
-        labelDevice = tk.Label(self._frame,text='Výber vstupného zariadenia :')
+        labelDevice = tk.Label(self._frame,text='Input device :')
         self._selectedDevice = tk.StringVar(self._master)
-        self._selectedDevice.set('-------------------- žiadne --------------------')
+        self._selectedDevice.set('-------------------- none --------------------')
         dropdownDeviceSelection = tk.OptionMenu(self._frame,self._selectedDevice,*self._deviceList.keys(), command=lambda widget : help.unlockWidget(self._buttonConfirmSettings))
         dropdownDeviceSelection.config(relief='sunken', borderwidth=0.5, background='white', activebackground='white', width=100)
 
-        labelSampleRate = tk.Label(self._frame,text='Výber vzorkovacej frekvencie (Hz) :')
+        labelSampleRate = tk.Label(self._frame,text='Sample rate (Hz) :')
         self._selectedSampleRate = tk.StringVar(self._master)
         self._selectedSampleRate.set('48000')
         dropdownSampleRate = tk.OptionMenu(self._frame,self._selectedSampleRate,*('44100','48000','64000','88200','96000'))
         dropdownSampleRate.config(relief='sunken', borderwidth=0.5, background='white', activebackground='white', width=100)
 
-        labelWindowLength = tk.Label(self._frame,text='Výber dĺžky vyhodnocovacieho okna (s) :')
+        labelWindowLength = tk.Label(self._frame,text='Predictive window length (s) :')
         self._selectedWindowLength = tk.StringVar(self._master)
         self._selectedWindowLength.set('2')
         dropdownWindowLength = tk.OptionMenu(self._frame,self._selectedWindowLength,*('2','3','4','5','6','7','8','9','10'))
         dropdownWindowLength.config(relief='sunken', borderwidth=0.5, background='white', activebackground='white', width=100)
 
-        labelBufferSize = tk.Label(self._frame,text='Výber veľkosti buffera (b) :')
+        labelBufferSize = tk.Label(self._frame,text='Buffer size (b) :')
         self._selectedBufferSize = tk.StringVar(self._master)
         self._selectedBufferSize.set('1024')
         dropdownBufferSize = tk.OptionMenu(self._frame,self._selectedBufferSize,*('8','16','32','64','128','256','512','1024','2048'))
         dropdownBufferSize.config(relief='sunken', borderwidth=0.5, background='white', activebackground='white', width=100)
 
-        self._buttonConfirmSettings = tk.Button(self._frame, text='Začať analýzu', state='disabled', command=self._sendSettings)
+        self._buttonConfirmSettings = tk.Button(self._frame, text='Start analysis', state='disabled', command=self._sendSettings)
         self._buttonConfirmSettings.config(width=20,height=2)
 
-        labelLoadFile = tk.Label(self._frame,text='Načítať zo súboru', font=('',15,'bold'))
+        labelLoadFile = tk.Label(self._frame,text='Load file', font=('',15,'bold'))
         self._entryFilePath = tk.Entry(self._frame, state='readonly')
         self._entryFilePath.config(readonlybackground='white')
-        buttonFileDialog = tk.Button(self._frame,text="Nájsť súbor", command=self._openFileDialog)
+        buttonFileDialog = tk.Button(self._frame,text="Browse", command=self._openFileDialog)
 
-        self._buttonConfirmFileSelection = tk.Button(self._frame,text='Analyzovať súbor', state='disabled', command=self._sendFilePath)
+        self._buttonConfirmFileSelection = tk.Button(self._frame,text='Analyse file', state='disabled', command=self._sendFilePath)
         self._buttonConfirmFileSelection.config(width=20,height=2)
 
         # umiestnenie widgetov v gride | placing of widgets in grid
@@ -76,7 +76,7 @@ class Settings(object):
 
     # funkcia, ktorá otvára okno explorera pre vyhladávanie .wav súborov | function opening explorer window searching for .wav files
     def _openFileDialog(self):
-        filename = filedialog.askopenfilename(initialdir='/',filetypes=[('wav file', '*.wav')], title='Výber súboru')
+        filename = filedialog.askopenfilename(initialdir='/',filetypes=[('wav file', '*.wav')], title='Select file')
         help.unlockWidget(self._entryFilePath)
         self._entryFilePath.delete(0,'end')
         self._entryFilePath.insert(0,filename)

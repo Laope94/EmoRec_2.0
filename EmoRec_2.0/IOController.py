@@ -72,8 +72,8 @@ class IOController(object):
     def getPlayerSamples(self):
         return self._player.getSamples()
 
-    # trieda StreamWorker je vnorená trieda InputController a stará sa o vytváranie a zatváranie prúdu údajov
-    # class StreamWorker is nested class of InputController and it handles creating and closing data stream 
+    # trieda StreamWorker je vnorená trieda IOController a stará sa o vytváranie a zatváranie prúdu údajov
+    # class StreamWorker is nested class of IOController and it handles creating and closing data stream 
     class StreamWorker(object):
 
         def __init__(self, deviceID, samplerate, windowLength, bufferSize, dataGrabber, predictEmotion):
@@ -94,7 +94,7 @@ class IOController(object):
                     if(self._dataBuffer.pushToFrame()):
                         sendDataThread = Thread(target=self._sendData)
                         sendDataThread.start()
-                        sendDataThread.join()
+                        #sendDataThread.join() # v prípade problémov a mrznutia programu odkomentovať | uncomment if you experience problems and application freezing
 
         # nastavuje isRunning flag na False a tým dôjde k zastaveniu workera | sets isRunning flag to False which stops the worker
         def terminate(self):

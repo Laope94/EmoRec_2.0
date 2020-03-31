@@ -5,6 +5,7 @@
 # Bc. Timotej Sulka
 
 import os
+import csv
 import time
 import pickle
 import numpy as np
@@ -74,9 +75,8 @@ class PredictionController(object):
     # funkcia pripravuje dáta do formy, ktorú potrebuje model na predikciu
     # function prepares data to form required for prediction by model
     def _preprocessData(self,data,samplerate):
-        _data = data*(self._a / np.mean(librosa.feature.rms(y=data))) # normalizácia na hlasitosť 60 db | normalization to volume 60 db
-        _data,index = librosa.effects.trim(y=_data, top_db=28, frame_length=8, hop_length=2) # orezanie ticha | silence trimming
-        _data = _data*(self._a / np.mean(librosa.feature.rms(y=_data))) # druhá normalizácia po orezaní | second normalization after trimming
+        _data,index = librosa.effects.trim(y=data, top_db=28, frame_length=8, hop_length=2) # orezanie ticha | silence trimming
+        _data = _data*(self._a / np.mean(librosa.feature.rms(y=_data))) # normalizácia na hlasitosť 60 db | normalization to volume 60 db
         mfcc = librosa.feature.mfcc(_data, samplerate, n_fft=self._n_fft, hop_length=self._hop_length, n_mfcc=self._n_mfcc) # výpočet 13 mfcc charakteristík | 13 mfcc calculation
         zerocrossing = librosa.feature.zero_crossing_rate(y=_data, hop_length=self._hop_length,frame_length=self._n_fft) # k 13 mfcc charakteristikám sa pridáva zerocrossing a energia ako 14 a 15 charakteristika
         energy = librosa.feature.rms(y=_data,hop_length=self._hop_length,frame_length=self._n_fft)                       # zerocrossing and energy is added to 13 mfcc as 14th and 15th characteristic
@@ -119,6 +119,11 @@ class PredictionController(object):
     def getLog(self):
         return self._logger.getLog()
 
+    # wrapper pre funkciu, ktorá uloží log do csv
+    # wrapper for function saving log to csv
+    def saveCSV(self,path):
+        return self._logger.saveCSV(path)
+
     # vnorená trieda PredictionControllera, uchováva históriu predikcií a časovú informáciu
     # nested class of PredictionController, it stores history of predictions and information about time
     class Logger(object):
@@ -129,7 +134,7 @@ class PredictionController(object):
             # poznámka: funkcie logPrediction() a getLastEmotions() je možné zjednodušiť tak aby shortTermLog nebol potrebný
             # shortTermLog existuje, pretože LogRecord pôvodne nemal mať funkciu getEmotion()
             # note: it's possible to simplify functions logPrediction() and getLastEmotions() in way that shortTermLog is not needed at all
-            # shortTermLog only exits because LogRecord originally wasn't supposed to have getEmotion() function
+            # shortTermLog only exists because LogRecord originally wasn't supposed to have getEmotion() function
 
         # uloží predikciu do logu v jednoduchej aj zložitej forme | stores prediction into log in simple and also complex form
         def logPrediction(self,prediction,windowLength):
@@ -163,6 +168,14 @@ class PredictionController(object):
                 log = log + r.toString()
             return log
 
+        # uloží log do CSV | saves log to CSV file
+        def saveCSV(self,path):
+            with open(path,'w',newline='') as logFile:
+                csvWriter = csv.writer(logFile,delimiter=';')
+                csvWriter.writerow(['start','end','emotion'])
+                for r in self._longTermLog:
+                    csvWriter.writerow(r.toCSV())
+
         # resetuje čas a vymaže záznamy loggera | resets time and deletes records in logger
         def clearLogger(self):
             self._sessionSeconds=0
@@ -185,4 +198,13 @@ class PredictionController(object):
             def toString(self):
                 emotionList = ['hnev','znechutenie','strach','radosť','neutrál','smútok','prekvapenie','ticho']
                 record = time.strftime('%H:%M:%S', time.gmtime(self._startTime)) + ' - ' + time.strftime('%H:%M:%S', time.gmtime(self._endTime))+ ' -- ' + emotionList[self._emotion]+'\n'
+                return record
+
+            # vráti záznam vo forme pola | returns record in form of array
+            def toCSV(self):
+                record = []
+                emotionList = ['hnev','znechutenie','strach','radosť','neutrál','smútok','prekvapenie','ticho']
+                record.append(time.strftime('%H:%M:%S', time.gmtime(self._startTime)))
+                record.append(time.strftime('%H:%M:%S', time.gmtime(self._endTime)))
+                record.append(emotionList[self._emotion])
                 return record

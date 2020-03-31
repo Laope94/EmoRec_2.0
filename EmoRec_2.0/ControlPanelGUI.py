@@ -6,6 +6,7 @@
 
 import tkinter as tk # https://docs.python.org/3/library/tkinter.html
 from tkinter import scrolledtext
+from tkinter import filedialog
 from HelperFunctions import HelperFunctions as help
 import matplotlib.pyplot as plt # https://matplotlib.org/contents.html
 from matplotlib.figure import Figure
@@ -36,7 +37,7 @@ class ControlPanel(object):
 
         self._master = master
         self._parent = parent
-        self._master.title('EmoRec 2.0 - Analýza')
+        self._master.title('EmoRec 2 - Analysis')
         self._frame = tk.Frame(self._master)
         self._frame.grid(column=0,row=0, sticky='nwes', padx=10,pady=10)
 
@@ -76,7 +77,7 @@ class ControlPanel(object):
             self._emotions = emotionPlot.imshow([[]], aspect='auto',extent=(0,5,0,1),cmap=cmap,norm=norm)
         else:
             self._emotions = emotionPlot.imshow([predictedEmotions], aspect='auto',extent=(0,len(predictedEmotions),0,1),cmap=cmap,norm=norm)
-        handles = [ patches.Patch(color=[ cmap(norm(i)) for i in range(8)][i], label=['hnev','znechutenie','strach','radosť','neutrál','smútok','prekvapenie','ticho'][i]) for i in range(8) ]
+        handles = [ patches.Patch(color=[ cmap(norm(i)) for i in range(8)][i], label=['anger','disgust','fear','happiness','neutral','sadness','surprise','silence'][i]) for i in range(8) ]
         legend = emotionPlot.legend(handles=handles, loc='upper center', bbox_to_anchor=(0.5,-0.2),fancybox=False, shadow=False, ncol=8)
         legend.get_frame().set_facecolor('#F0F0F0')
         legend.get_frame().set_linewidth(0)
@@ -85,22 +86,22 @@ class ControlPanel(object):
         self._canvas = FigureCanvasTkAgg(fig,master=self._frame)
         self._canvas.draw()
 
-        self._buttonStartStream = tk.Button(self._frame, text='Štart', command= self._startStreamAndUpdateUI)
+        self._buttonStartStream = tk.Button(self._frame, text='Start stream', command= self._startStreamAndUpdateUI)
         self._buttonStartStream.config(width=20,height=2)
 
-        self._buttonStopStream = tk.Button(self._frame, text='Stop', command = self._stopStreamAndUpdateUI)
+        self._buttonStopStream = tk.Button(self._frame, text='Stop stream', command = self._stopStreamAndUpdateUI)
         self._buttonStopStream.config(width=20,height=2)
 
-        self._buttonStartPlayback = tk.Button(self._frame, text='Prehrať', command= self._startPlayback)
+        self._buttonStartPlayback = tk.Button(self._frame, text='Play', command= self._startPlayback)
         self._buttonStartPlayback.config(width=20,height=2)
 
-        self._buttonStopPlayback  = tk.Button(self._frame, text='Zastaviť prehrávanie', command= self._stopPlayback)
+        self._buttonStopPlayback  = tk.Button(self._frame, text='Stop', command= self._stopPlayback)
         self._buttonStopPlayback.config(width=20,height=2)
 
-        self._buttonShowLog  = tk.Button(self._frame, text='Zobraziť log', command=self._readLog)
+        self._buttonShowLog  = tk.Button(self._frame, text='Show log', command=self._readLog)
         self._buttonShowLog.config(width=20,height=2)
 
-        self._buttonSettings = tk.Button(self._frame, text='Nastavenia', command=self._destroyItself)
+        self._buttonSettings = tk.Button(self._frame, text='Settings', command=self._destroyItself)
         self._buttonSettings.config(width=20,height=2)
 
         # umiestnenie widgetov v gride | placing of widgets in grid
@@ -118,14 +119,14 @@ class ControlPanel(object):
         else: 
             help.lockWidget(*(self._buttonStartStream, self._buttonStopStream))
         
-    # začne stream v InputControlleri a upraví GUI | starts stream in InputController and updates GUI
+    # začne stream v IOControlleri a upraví GUI | starts stream in IOController and updates GUI
     def _startStreamAndUpdateUI(self):
         self._ioController.startStream(self._deviceID,self._sampleRate,self._windowLength,self._bufferSize,self._dataGrabber,self._predictionController.predictFromStream)
         self._predictionController.clearLogger()
         help.lockWidget(*(self._buttonStartStream,self._buttonSettings, self._buttonShowLog))
         help.unlockWidget(self._buttonStopStream)
 
-    # zastaví stream v InputControlleri a upraví GUI | stops stream in InputController and updates GUI
+    # zastaví stream v IOControlleri a upraví GUI | stops stream in IOController and updates GUI
     def _stopStreamAndUpdateUI(self):
         self._ioController.streamStop()
         help.lockWidget(self._buttonStopStream)
@@ -140,14 +141,14 @@ class ControlPanel(object):
     def _stopPlayback(self):
         self._ioController.stopPlayback()
 
-    # táto funkcia slúži na získavanie údajov z InputControllera | this function gets data from InputController
+    # táto funkcia slúži na získavanie údajov z IOControllera | this function gets data from IOController
     def _dataGrabber(self,data,predictions):
         self._master.after(0, lambda : self._redrawWaveform(data,predictions)) # funkcia dataGrabber je volaná z iného vlákna, ale prekreslenie tkinter môže byť volané iba z mainloop vlákna, inak spadne | dataGrabber is called from another thread, but tkinter draw can be called only from mainloop, crashes otherwise
 
     # prekreslí graf
     def _redrawWaveform(self, data, predictions):
         if(self._extendX):                                           # 
-            self._waveform.set_xdata(self._indices[0:len(data)])      # pozri nižšie pre vysvetlenie tejto časti
+            self._waveform.set_xdata(self._indices[0:len(data)])     # pozri nižšie pre vysvetlenie tejto časti
             if(len(data)==self._maxDataSize):                        # see below for explanation of this part
                 self._extendX = False                                #
         self._waveform.set_ydata(data) # update dát | updates data
@@ -168,21 +169,32 @@ class ControlPanel(object):
         # it's not possible to take indexes of samples directly, but list containing numbers from 0 to number of samples can be made
         # to prevent creating this list everytime during redraw, list is created in __init__ function and is only sliced as required to match number of samples
         # if buffer contains 5 frames then it's not necessary to update number of samples anymore, because their number will be firm from this moment - variable extendX
-        # this was slightly improves CPU performance
+        # this slightly improves CPU performance
         # note - one more method of redrawing exists - clear the plot, then add new data and redraw, it doesn't require knowing indexes to data, but it's much slower and more CPU demanding
 
     # zobrazí okno s históriou predikcie | shows window with history of prediction
     def _readLog(self): 
-        logWindow = tk.Toplevel(self._master)
-        logWindow.resizable(False,False)
-        logWindow.title('Log')
-        frame = tk.Frame(logWindow)
+        self._logWindow = tk.Toplevel(self._master)
+        self._logWindow.resizable(False,False)
+        self._logWindow.title('Log')
+        frame = tk.Frame(self._logWindow)
         logText = scrolledtext.ScrolledText(master=frame, width=40, height=20)
         logText.insert('1.0',self._predictionController.getLog())
         help.lockWidget(logText)
-        frame.grid(column=0,row=0, sticky='nwes', padx=10,pady=10)
-        logText.grid(row=0,column=0, sticky='nwes')
-        logWindow.focus_force()
+        buttonSaveLog = tk.Button(frame, text='Save log', command=self._saveLog)
+        buttonSaveLog.config(width=10,height=2)
+        frame.grid(column=0,row=0, sticky='nwes', padx=5,pady=5)
+        logText.grid(row=0,column=0, columnspan=3, sticky='nwes', padx=5,pady=5)
+        buttonSaveLog.grid(row=1,column=1,sticky='news', padx=5,pady=5)
+        self._logWindow.focus_force()
+
+    # otvára okno explorera a na zadanú cestu uloží csv súbor | opens explorer window and saves csv file to selected path
+    def _saveLog(self):
+        savePath = filedialog.asksaveasfilename(initialdir = "/",title = "Save log",filetypes = (("csv","*.csv"),))
+        if(len(savePath)>0):
+            savePath = savePath+'.csv'
+            self._predictionController.saveCSV(savePath)
+        self._logWindow.focus_force()
 
     # vymaže ControlPanelGUI frame z hlavného okna | removes ControlPanelGUI frame from main window
     def _destroyItself(self):
