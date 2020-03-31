@@ -196,14 +196,14 @@ class PredictionController(object):
 
             # vráti kompletný záznam vo forme reťazca s informáciou o určenej emócií a trvaní v čase | returns complete record in form of string with information about predicted emotion and time duration
             def toString(self):
-                emotionList = ['hnev','znechutenie','strach','radosť','neutrál','smútok','prekvapenie','ticho']
+                emotionList = ['anger','disgust','fear','happiness','neutral','sadness','surprise','silence']
                 record = time.strftime('%H:%M:%S', time.gmtime(self._startTime)) + ' - ' + time.strftime('%H:%M:%S', time.gmtime(self._endTime))+ ' -- ' + emotionList[self._emotion]+'\n'
                 return record
 
             # vráti záznam vo forme pola | returns record in form of array
             def toCSV(self):
                 record = []
-                emotionList = ['hnev','znechutenie','strach','radosť','neutrál','smútok','prekvapenie','ticho']
+                emotionList = ['anger','disgust','fear','happiness','neutral','sadness','surprise','silence']
                 record.append(time.strftime('%H:%M:%S', time.gmtime(self._startTime)))
                 record.append(time.strftime('%H:%M:%S', time.gmtime(self._endTime)))
                 record.append(emotionList[self._emotion])
