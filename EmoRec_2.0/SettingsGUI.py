@@ -41,10 +41,10 @@ class Settings(object):
         dropdownWindowLength = tk.OptionMenu(self._frame,self._selectedWindowLength,*('2','3','4','5','6','7','8','9','10'))
         dropdownWindowLength.config(relief='sunken', borderwidth=0.5, background='white', activebackground='white', width=100)
 
-        labelBufferSize = tk.Label(self._frame,text='Buffer size (b) :')
+        labelBufferSize = tk.Label(self._frame,text='Buffer size (samples) :')
         self._selectedBufferSize = tk.StringVar(self._master)
         self._selectedBufferSize.set('1024')
-        dropdownBufferSize = tk.OptionMenu(self._frame,self._selectedBufferSize,*('8','16','32','64','128','256','512','1024','2048'))
+        dropdownBufferSize = tk.OptionMenu(self._frame,self._selectedBufferSize,*('64','128','256','512','1024','2048'))
         dropdownBufferSize.config(relief='sunken', borderwidth=0.5, background='white', activebackground='white', width=100)
 
         self._buttonConfirmSettings = tk.Button(self._frame, text='Start analysis', state='disabled', command=self._sendSettings)
