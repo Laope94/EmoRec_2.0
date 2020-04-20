@@ -5,7 +5,7 @@ __Univerzita Konštantína Filozofa v Nitre | Constantine the Philosopher Univer
 Fakulta Prírodných Vied | Faculty of Natural Sciences\
 Katedra informatiky | Department of informatics\
 Diplomová práca | Diploma thesis\
-Autor | Author : Bc. Timotej Sulka
+Autor | Author : Bc. Timotej Sulka\
 Školitel | Supervisor: PaedDr. Martin Magdin Ph.D.__
 
 ## Testované na | Tested on
