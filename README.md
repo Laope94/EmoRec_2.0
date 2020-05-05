@@ -5,7 +5,11 @@ __Univerzita Konštantína Filozofa v Nitre | Constantine the Philosopher Univer
 Fakulta Prírodných Vied | Faculty of Natural Sciences\
 Katedra informatiky | Department of informatics\
 Diplomová práca | Diploma thesis\
-Bc. Timotej Sulka__
+Autor | Author : Bc. Timotej Sulka\
+Školitel | Supervisor: PaedDr. Martin Magdin Ph.D.__
+
+## Vytvorené v | Created with
+Visual Studio 2017
 
 ## Testované na | Tested on
 ASUS ROG Strix GL553VD\
@@ -21,9 +25,10 @@ sounddevice (0.3.13)\
 Soundfile (0.10.2)\
 numpy (1.17.3)\
 librosa (0.7.0)\
-tensorflow-gpu (1.14.0)\
+tensorflow-gpu (1.14.0) \\ tensorflow (1.14.0)*\
 Keras (2.2.5)\
-scipy (1.3.1)
-
-## Odporúčané | Recommended
-Nvidia CUDA
+scipy (1.3.1)\
+\
+\*jedna z týchto dvoch | choose one\
+\*ak je použitá knižnica tensorflow-gpu tak je zároveň potrebné používať technológiu Nvidia Cuda (10.0) | if tensorflow-gpu is used then Nvidia CUDA (10.0) is required as well\
+\*odporúča sa použitie tensorflow-gpu | tensorflow-gpu is recommended
