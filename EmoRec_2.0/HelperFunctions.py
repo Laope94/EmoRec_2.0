@@ -1,8 +1,10 @@
+# Real Time klasifikácia emocionálneho stavu z reči | Real Time Classification of Emotional States from Speech
 # Univerzita Konštantína Filozofa v Nitre | Constantine the Philosopher University in Nitra
 # Fakulta Prírodných Vied | Faculty of Natural Sciences
 # Katedra informatiky | Department of informatics
 # Diplomová práca | Diploma thesis
-# Bc. Timotej Sulka
+# Autor | Author : Bc. Timotej Sulka
+# Školitel | Supervisor: PaedDr. Martin Magdin Ph.D.
 
 # táto trieda obsahuje pomocné funkcie, ktoré využívajú viaceré triedy
 # this class contains helper functions commonly used by other classes
